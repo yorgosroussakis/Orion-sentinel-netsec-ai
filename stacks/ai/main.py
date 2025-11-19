@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from orion_ai.config import get_config
 from orion_ai.pipelines import DeviceAnomalyPipeline, DomainRiskPipeline
 from orion_ai.http_server import run_server
+from orion_ai.threat_intel import ThreatIntelligenceService
+import asyncio
 
 
 def setup_logging(log_level: str):
@@ -46,6 +48,22 @@ def run_batch_mode(interval: int):
     logger = logging.getLogger(__name__)
     logger.info(f"Starting batch mode with interval: {interval} minutes")
     
+    # Initialize threat intelligence (if enabled)
+    config = get_config()
+    threat_intel = None
+    if config.threat_intel.enable_threat_intel:
+        threat_intel = ThreatIntelligenceService(
+            cache_path=config.threat_intel.cache_path,
+            otx_api_key=config.threat_intel.otx_api_key,
+            refresh_interval_hours=config.threat_intel.refresh_interval_hours
+        )
+        # Initial feed refresh
+        logger.info("Refreshing threat intelligence feeds on startup...")
+        try:
+            asyncio.run(threat_intel.refresh_feeds(force=True))
+        except Exception as e:
+            logger.error(f"Failed to refresh threat feeds on startup: {e}")
+    
     # Initialize pipelines
     device_pipeline = DeviceAnomalyPipeline()
     domain_pipeline = DomainRiskPipeline()
@@ -57,6 +75,13 @@ def run_batch_mode(interval: int):
         logger.info(f"{'='*80}")
         logger.info(f"Batch iteration {iteration} started at {datetime.now()}")
         logger.info(f"{'='*80}")
+        
+        # Refresh threat intelligence periodically
+        if threat_intel:
+            try:
+                asyncio.run(threat_intel.refresh_feeds())
+            except Exception as e:
+                logger.error(f"Failed to refresh threat feeds: {e}")
         
         try:
             # Run device anomaly detection

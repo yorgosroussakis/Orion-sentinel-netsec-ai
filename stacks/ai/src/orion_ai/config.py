@@ -86,6 +86,42 @@ class ModelConfig(BaseSettings):
         env_prefix = ""
 
 
+class ThreatIntelConfig(BaseSettings):
+    """Threat intelligence feed configuration."""
+    
+    enable_threat_intel: bool = Field(
+        default=True,
+        description="Enable threat intelligence feed integration"
+    )
+    cache_path: str = Field(
+        default="/var/lib/orion-ai/threat_intel.db",
+        description="Path to threat intelligence cache database"
+    )
+    otx_api_key: Optional[str] = Field(
+        default=None,
+        description="AlienVault OTX API key (optional, increases rate limits)"
+    )
+    refresh_interval_hours: int = Field(
+        default=6,
+        ge=1,
+        description="How often to refresh threat feeds (hours)"
+    )
+    ioc_score_boost: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Score boost when IOC match is found"
+    )
+    cleanup_days: int = Field(
+        default=30,
+        ge=1,
+        description="Remove threat data older than this many days"
+    )
+    
+    class Config:
+        env_prefix = "THREAT_INTEL_"
+
+
 class DetectionConfig(BaseSettings):
     """Detection pipeline configuration."""
     
@@ -107,6 +143,10 @@ class DetectionConfig(BaseSettings):
     enable_blocking: bool = Field(
         default=False,
         description="Enable automatic domain blocking via Pi-hole"
+    )
+    streaming_mode: bool = Field(
+        default=False,
+        description="Enable real-time streaming mode (vs batch)"
     )
     
     class Config:
@@ -130,6 +170,7 @@ class AppConfig(BaseSettings):
     pihole: PiHoleConfig = Field(default_factory=PiHoleConfig)
     model: ModelConfig = Field(default_factory=ModelConfig)
     detection: DetectionConfig = Field(default_factory=DetectionConfig)
+    threat_intel: ThreatIntelConfig = Field(default_factory=ThreatIntelConfig)
     
     @field_validator("log_level")
     @classmethod
@@ -166,7 +207,8 @@ def get_config() -> AppConfig:
             loki=LokiConfig(),
             pihole=PiHoleConfig(),
             model=ModelConfig(),
-            detection=DetectionConfig()
+            detection=DetectionConfig(),
+            threat_intel=ThreatIntelConfig()
         )
     return _config
 

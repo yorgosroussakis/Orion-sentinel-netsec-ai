@@ -35,6 +35,15 @@ services:
       # Enable/disable enforcement
       - ENABLE_BLOCKING=${ENABLE_BLOCKING:-false}
       
+      # Streaming mode (real-time vs batch)
+      - STREAMING_MODE=${STREAMING_MODE:-false}
+      
+      # Threat Intelligence
+      - THREAT_INTEL_ENABLE_THREAT_INTEL=${THREAT_INTEL_ENABLE:-true}
+      - THREAT_INTEL_OTX_API_KEY=${THREAT_INTEL_OTX_API_KEY}
+      - THREAT_INTEL_REFRESH_INTERVAL_HOURS=${THREAT_INTEL_REFRESH_HOURS:-6}
+      - THREAT_INTEL_IOC_SCORE_BOOST=${THREAT_INTEL_IOC_SCORE_BOOST:-0.3}
+      
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - PYTHONUNBUFFERED=1
@@ -45,6 +54,9 @@ services:
       
       # Mount AI results for Promtail to pick up
       - ai-logs:/var/log/ai
+      
+      # Persistent storage for threat intelligence cache
+      - threat-intel-cache:/var/lib/orion-ai
     
     # Optional: Expose HTTP API
     ports:
@@ -79,6 +91,8 @@ services:
 
 volumes:
   ai-logs:
+    driver: local
+  threat-intel-cache:
     driver: local
 
 networks:

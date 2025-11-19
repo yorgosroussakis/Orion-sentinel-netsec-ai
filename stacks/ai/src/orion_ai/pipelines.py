@@ -2,6 +2,7 @@
 Detection pipelines for device anomaly detection and domain risk scoring.
 
 Orchestrates the full workflow from log reading to model inference to enforcement.
+Includes threat intelligence integration for enhanced detection.
 """
 
 import logging
@@ -15,6 +16,7 @@ from orion_ai.feature_extractor import FeatureExtractor
 from orion_ai.model_runner import load_model
 from orion_ai.output_writer import OutputWriter
 from orion_ai.pihole_client import PiHoleClient, DummyPiHoleClient
+from orion_ai.threat_intel import ThreatIntelligenceService
 
 logger = logging.getLogger(__name__)
 
@@ -284,6 +286,18 @@ class DomainRiskPipeline:
             logger.info("Blocking disabled - using dummy Pi-hole client")
             self.pihole_client = DummyPiHoleClient()
         
+        # Threat intelligence service (if enabled)
+        if self.config.threat_intel.enable_threat_intel:
+            self.threat_intel = ThreatIntelligenceService(
+                cache_path=self.config.threat_intel.cache_path,
+                otx_api_key=self.config.threat_intel.otx_api_key,
+                refresh_interval_hours=self.config.threat_intel.refresh_interval_hours
+            )
+            logger.info("Threat intelligence integration enabled")
+        else:
+            self.threat_intel = None
+            logger.info("Threat intelligence integration disabled")
+        
         logger.info("Initialized DomainRiskPipeline")
     
     def run(
@@ -382,6 +396,11 @@ class DomainRiskPipeline:
         Returns:
             DomainRiskResult or None if processing failed
         """
+        # Check threat intelligence first (if enabled)
+        threat_indicator = None
+        if self.threat_intel:
+            threat_indicator = self.threat_intel.check_domain(domain)
+        
         # Extract features
         features = self.feature_extractor.extract_domain_features(
             domain=domain,
@@ -399,20 +418,43 @@ class DomainRiskPipeline:
             logger.error(f"Model inference failed for domain {domain}: {e}")
             return None
         
+        # Boost risk score if threat intelligence match found
+        original_score = risk_score
+        if threat_indicator:
+            ioc_boost = self.config.threat_intel.ioc_score_boost
+            risk_score = min(1.0, risk_score + ioc_boost)
+            logger.warning(
+                f"Threat intel match for {domain}: {threat_indicator.threat_type.value} "
+                f"from {threat_indicator.source} (confidence={threat_indicator.confidence:.2f}). "
+                f"Score boosted from {original_score:.3f} to {risk_score:.3f}"
+            )
+        
         # Apply policy
         threshold = self.config.model.domain_risk_threshold
-        action, reason = self._apply_policy(domain, risk_score, threshold, features.to_dict())
+        action, reason = self._apply_policy(
+            domain, risk_score, threshold, features.to_dict(), threat_indicator
+        )
         
         # Enforce if action is BLOCK
         pihole_response = None
         if action == "BLOCK":
             pihole_response = self._enforce_block(domain, risk_score)
         
+        # Add threat intel info to features if present
+        features_dict = features.to_dict()
+        if threat_indicator:
+            features_dict["threat_intel_match"] = {
+                "source": threat_indicator.source,
+                "threat_type": threat_indicator.threat_type.value,
+                "confidence": threat_indicator.confidence,
+                "description": threat_indicator.description
+            }
+        
         # Create result
         result = DomainRiskResult(
             domain=domain,
             risk_score=risk_score,
-            features=features.to_dict(),
+            features=features_dict,
             threshold=threshold,
             action=action,
             reason=reason
@@ -422,7 +464,7 @@ class DomainRiskPipeline:
         self.output_writer.write_domain_risk(
             domain=domain,
             risk_score=risk_score,
-            features=features.to_dict(),
+            features=features_dict,
             action=action,
             threshold=threshold,
             reason=reason,
@@ -436,7 +478,8 @@ class DomainRiskPipeline:
         domain: str,
         risk_score: float,
         threshold: float,
-        features: Dict
+        features: Dict,
+        threat_indicator=None
     ) -> Tuple[str, str]:
         """
         Apply blocking policy.
@@ -444,10 +487,24 @@ class DomainRiskPipeline:
         Returns:
             Tuple of (action, reason)
         """
-        if risk_score >= threshold:
-            return "BLOCK", f"Risk score {risk_score:.3f} >= threshold {threshold}"
+        if threat_indicator:
+            # If threat intel match, include in reason
+            if risk_score >= threshold:
+                return "BLOCK", (
+                    f"Risk score {risk_score:.3f} >= threshold {threshold} "
+                    f"+ Threat intel match ({threat_indicator.source})"
+                )
+            else:
+                # Even below threshold, mention threat intel match
+                return "ALLOW", (
+                    f"Risk score {risk_score:.3f} < threshold {threshold} "
+                    f"but flagged by {threat_indicator.source}"
+                )
         else:
-            return "ALLOW", f"Risk score {risk_score:.3f} < threshold {threshold}"
+            if risk_score >= threshold:
+                return "BLOCK", f"Risk score {risk_score:.3f} >= threshold {threshold}"
+            else:
+                return "ALLOW", f"Risk score {risk_score:.3f} < threshold {threshold}"
     
     def _enforce_block(self, domain: str, risk_score: float) -> Optional[str]:
         """
