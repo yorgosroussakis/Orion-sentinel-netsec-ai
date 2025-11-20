@@ -7,7 +7,7 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from .models import Device
 
@@ -35,7 +35,8 @@ class InventoryStore:
     def _init_db(self) -> None:
         """Initialize database schema."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS devices (
                     ip TEXT PRIMARY KEY,
                     mac TEXT,
@@ -54,7 +55,8 @@ class InventoryStore:
                     intel_match_count INTEGER DEFAULT 0,
                     metadata TEXT
                 )
-            """)
+            """,
+            )
 
             # Indexes for common queries
             conn.execute("CREATE INDEX IF NOT EXISTS idx_last_seen ON devices(last_seen)")
@@ -126,7 +128,9 @@ class InventoryStore:
         logger.debug(f"Saved device: {device.ip}")
 
     def list_devices(
-        self, tags: Optional[List[str]] = None, limit: Optional[int] = None,
+        self,
+        tags: Optional[List[str]] = None,
+        limit: Optional[int] = None,
     ) -> List[Device]:
         """
         List devices with optional filtering.
@@ -212,9 +216,9 @@ class InventoryStore:
             vendor=row["vendor"],
             os_guess=row["os_guess"],
             open_ports=json.loads(row["open_ports"]) if row["open_ports"] else [],
-            common_destinations=json.loads(row["common_destinations"])
-            if row["common_destinations"]
-            else [],
+            common_destinations=(
+                json.loads(row["common_destinations"]) if row["common_destinations"] else []
+            ),
             risk_score=row["risk_score"] or 0.0,
             anomaly_count=row["anomaly_count"] or 0,
             intel_match_count=row["intel_match_count"] or 0,

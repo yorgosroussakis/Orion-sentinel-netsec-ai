@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
 from typing import List, Optional
 
 from .analyzer import ChangeAnalyzer
@@ -84,7 +83,8 @@ class ChangeMonitorService:
                 if previous_baseline:
                     logger.info("Analyzing changes...")
                     changes = self.analyzer.compare_baselines(
-                        previous_baseline, current_baseline,
+                        previous_baseline,
+                        current_baseline,
                     )
 
                     # Emit change events

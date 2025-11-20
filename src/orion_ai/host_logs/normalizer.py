@@ -30,12 +30,11 @@ class HostLogNormalizer:
         try:
             if source == "wazuh":
                 return self.normalize_wazuh(raw_event)
-            elif source == "osquery":
+            if source == "osquery":
                 return self.normalize_osquery(raw_event)
-            elif source == "syslog":
+            if source == "syslog":
                 return self.normalize_syslog(raw_event)
-            else:
-                return self.normalize_generic(raw_event, source)
+            return self.normalize_generic(raw_event, source)
         except Exception as e:
             logger.error(f"Failed to normalize event from {source}: {e}")
             return None
@@ -165,7 +164,10 @@ class HostLogNormalizer:
         )
 
     def _map_osquery_event_type(
-        self, query_name: str, action: str, columns: Dict,
+        self,
+        query_name: str,
+        action: str,
+        columns: Dict,
     ) -> HostEventType:
         """Map osquery query results to event types."""
         query_lower = query_name.lower()
@@ -173,21 +175,20 @@ class HostLogNormalizer:
         if "process" in query_lower:
             if action == "added":
                 return HostEventType.PROCESS_STARTED
-            elif action == "removed":
+            if action == "removed":
                 return HostEventType.PROCESS_TERMINATED
 
         if "file" in query_lower:
             if action == "added":
                 return HostEventType.FILE_CREATED
-            elif action == "removed":
+            if action == "removed":
                 return HostEventType.FILE_DELETED
-            else:
-                return HostEventType.FILE_MODIFIED
+            return HostEventType.FILE_MODIFIED
 
         if "package" in query_lower:
             if action == "added":
                 return HostEventType.PACKAGE_INSTALLED
-            elif action == "removed":
+            if action == "removed":
                 return HostEventType.PACKAGE_REMOVED
 
         if "login" in query_lower or "auth" in query_lower:

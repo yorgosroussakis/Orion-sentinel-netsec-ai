@@ -7,7 +7,6 @@ For future enhancement with LLM integration.
 
 import logging
 import re
-from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter
@@ -99,10 +98,10 @@ class SimpleAssistant:
         # No pattern matched
         return AssistantResponse(
             answer="I'm not sure how to answer that. Try asking about:\n"
-                   "- Suspicious activity from an IP\n"
-                   "- New devices\n"
-                   "- Health score\n"
-                   "- Top threats",
+            "- Suspicious activity from an IP\n"
+            "- New devices\n"
+            "- Health score\n"
+            "- Top threats",
             query_type="unknown",
             confidence=0.0,
             suggestions=[
@@ -113,7 +112,9 @@ class SimpleAssistant:
         )
 
     def handle_suspicious_activity(
-        self, match: re.Match, query: AssistantQuery,
+        self,
+        match: re.Match,
+        query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about suspicious activity for an IP."""
         ip = match.group(1)
@@ -128,17 +129,19 @@ class SimpleAssistant:
 
         return AssistantResponse(
             answer=f"Checking suspicious activity for {ip} in the last 24 hours...\n\n"
-                   f"TODO: Query Loki for:\n"
-                   f"- Suricata alerts\n"
-                   f"- AI anomalies\n"
-                   f"- Threat intel matches",
+            f"TODO: Query Loki for:\n"
+            f"- Suricata alerts\n"
+            f"- AI anomalies\n"
+            f"- Threat intel matches",
             data={"ip": ip, "lookback_hours": 24},
             query_type="suspicious_activity",
             confidence=0.9,
         )
 
     def handle_device_alerts(
-        self, match: re.Match, query: AssistantQuery,
+        self,
+        match: re.Match,
+        query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about alerts for a device."""
         ip = match.group(1)
@@ -147,14 +150,16 @@ class SimpleAssistant:
 
         return AssistantResponse(
             answer=f"Fetching alerts for device {ip}...\n\n"
-                   f"TODO: Implement Loki query for alerts",
+            f"TODO: Implement Loki query for alerts",
             data={"ip": ip},
             query_type="device_alerts",
             confidence=0.9,
         )
 
     def handle_new_devices(
-        self, match: re.Match, query: AssistantQuery,
+        self,
+        match: re.Match,
+        query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about new devices."""
         logger.info("Assistant: Fetching new devices")
@@ -163,14 +168,16 @@ class SimpleAssistant:
 
         return AssistantResponse(
             answer="Checking for new devices in the last 7 days...\n\n"
-                   "TODO: Query inventory database",
+            "TODO: Query inventory database",
             data={"lookback_days": 7},
             query_type="new_devices",
             confidence=0.95,
         )
 
     def handle_health_score(
-        self, match: re.Match, query: AssistantQuery,
+        self,
+        match: re.Match,
+        query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about health score."""
         logger.info("Assistant: Fetching health score")
@@ -179,14 +186,16 @@ class SimpleAssistant:
 
         return AssistantResponse(
             answer="Fetching latest security health score...\n\n"
-                   "TODO: Query health score service or Loki",
+            "TODO: Query health score service or Loki",
             data={},
             query_type="health_score",
             confidence=0.95,
         )
 
     def handle_top_threats(
-        self, match: re.Match, query: AssistantQuery,
+        self,
+        match: re.Match,
+        query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about top threats."""
         logger.info("Assistant: Fetching top threats")
@@ -197,8 +206,7 @@ class SimpleAssistant:
         # - High-risk devices
 
         return AssistantResponse(
-            answer="Analyzing top threats...\n\n"
-                   "TODO: Aggregate threat data from Loki",
+            answer="Analyzing top threats...\n\nTODO: Aggregate threat data from Loki",
             data={},
             query_type="top_threats",
             confidence=0.9,

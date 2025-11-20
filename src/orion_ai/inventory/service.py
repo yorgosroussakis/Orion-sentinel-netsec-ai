@@ -7,7 +7,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from .collector import DeviceCollector
 from .fingerprinting import DeviceFingerprinter

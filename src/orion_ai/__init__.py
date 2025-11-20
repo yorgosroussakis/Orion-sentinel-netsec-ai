@@ -18,7 +18,7 @@ Main modules:
 __version__ = "0.2.0"
 __author__ = "Orion Sentinel Team"
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Environment configuration defaults
 DEFAULT_CONFIG: Dict[str, Any] = {
@@ -28,4 +28,4 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "log_level": "INFO",
 }
 
-__all__ = ["__version__", "__author__", "DEFAULT_CONFIG"]
+__all__ = ["DEFAULT_CONFIG", "__author__", "__version__"]

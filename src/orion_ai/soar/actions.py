@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from .models import Action, ActionType, TriggeredAction
+from .models import ActionType, TriggeredAction
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +195,9 @@ class ActionExecutor:
         }
 
     def execute_send_notification(
-        self, message: str, severity: str = "info",
+        self,
+        message: str,
+        severity: str = "info",
     ) -> Dict[str, Any]:
         """
         Send a notification via configured channel.

@@ -126,19 +126,19 @@ class Condition(BaseModel):
         """Compare field value with target using operator."""
         if operator == ConditionOperator.EQUALS:
             return bool(field_value == target_value)
-        elif operator == ConditionOperator.NOT_EQUALS:
+        if operator == ConditionOperator.NOT_EQUALS:
             return bool(field_value != target_value)
-        elif operator == ConditionOperator.GREATER_THAN:
+        if operator == ConditionOperator.GREATER_THAN:
             return bool(field_value > target_value)
-        elif operator == ConditionOperator.GREATER_THAN_OR_EQUAL:
+        if operator == ConditionOperator.GREATER_THAN_OR_EQUAL:
             return bool(field_value >= target_value)
-        elif operator == ConditionOperator.LESS_THAN:
+        if operator == ConditionOperator.LESS_THAN:
             return bool(field_value < target_value)
-        elif operator == ConditionOperator.LESS_THAN_OR_EQUAL:
+        if operator == ConditionOperator.LESS_THAN_OR_EQUAL:
             return bool(field_value <= target_value)
-        elif operator == ConditionOperator.CONTAINS:
+        if operator == ConditionOperator.CONTAINS:
             return bool(target_value in str(field_value))
-        elif operator == ConditionOperator.IN:
+        if operator == ConditionOperator.IN:
             return bool(field_value in target_value)
 
         return False

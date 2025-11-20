@@ -17,7 +17,9 @@ class ChangeAnalyzer:
     """
 
     def compare_baselines(
-        self, previous: Baseline, current: Baseline,
+        self,
+        previous: Baseline,
+        current: Baseline,
     ) -> List[ChangeEvent]:
         """
         Compare two baselines and generate change events.
@@ -86,7 +88,11 @@ class ChangeAnalyzer:
         return changes
 
     def _compare_device_baselines(
-        self, device_ip: str, previous: dict, current: dict, baseline_id: str,
+        self,
+        device_ip: str,
+        previous: dict,
+        current: dict,
+        baseline_id: str,
     ) -> List[ChangeEvent]:
         """
         Compare device-specific baselines.

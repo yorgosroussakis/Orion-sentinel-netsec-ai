@@ -8,13 +8,12 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from .actions import ActionExecutor, ActionLogger
 from .engine import PlaybookEngine
-from .models import EventRef, EventType, TriggeredAction
+from .models import EventRef, TriggeredAction
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -60,7 +59,8 @@ class SoarService:
         self.running = False
 
     async def fetch_events_from_loki(
-        self, lookback_seconds: int = 300,
+        self,
+        lookback_seconds: int = 300,
     ) -> List[EventRef]:
         """
         Fetch recent events from Loki.

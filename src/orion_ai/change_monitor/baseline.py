@@ -4,7 +4,7 @@ Baseline creation for change detection.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Any, Optional
+from typing import Optional
 
 from .models import Baseline, DeviceBaseline
 
@@ -17,7 +17,9 @@ class BaselineBuilder:
     """
 
     def build_global_baseline(
-        self, period_days: int = 7, end_time: Optional[datetime] = None,
+        self,
+        period_days: int = 7,
+        end_time: Optional[datetime] = None,
     ) -> Baseline:
         """
         Build a baseline snapshot of the entire network.
@@ -52,7 +54,10 @@ class BaselineBuilder:
         return baseline
 
     def build_device_baseline(
-        self, device_ip: str, period_days: int = 7, end_time: Optional[datetime] = None,
+        self,
+        device_ip: str,
+        period_days: int = 7,
+        end_time: Optional[datetime] = None,
     ) -> DeviceBaseline:
         """
         Build baseline for a single device.
@@ -107,7 +112,11 @@ class BaselineBuilder:
 
         logger.info(f"Saved baseline to {filepath}")
 
-    def load_baseline(self, baseline_id: str, storage_path: str = "/data/baselines") -> Optional[Baseline]:
+    def load_baseline(
+        self,
+        baseline_id: str,
+        storage_path: str = "/data/baselines",
+    ) -> Optional[Baseline]:
         """
         Load baseline from storage.
 
@@ -127,7 +136,7 @@ class BaselineBuilder:
             logger.warning(f"Baseline {baseline_id} not found at {filepath}")
             return None
 
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
 
         # Convert datetime strings back to datetime objects

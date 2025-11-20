@@ -6,7 +6,6 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
 
 from .calculator import HealthScoreCalculator
 from .models import HealthMetrics, HealthScore

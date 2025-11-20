@@ -43,15 +43,15 @@ jobs:
     
     - name: Lint with ruff
       run: |
-        ruff check src/ || true
-    
+        ruff check src/
+
     - name: Format check with black
       run: |
-        black --check src/ || true
-    
+        black --check src/
+
     - name: Type check with mypy
       run: |
-        mypy src/ || true
+        mypy src/
     
     - name: Run tests
       run: |
@@ -73,4 +73,4 @@ jobs:
     
     - name: Test Docker image
       run: |
-        docker run --rm orion-sentinel:test python -c "import src.orion_ai; print('Package imports successfully')"
+        docker run --rm orion-sentinel:test python -c "import orion_ai; print('Package imports successfully')"

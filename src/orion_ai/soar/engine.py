@@ -3,15 +3,15 @@ SOAR playbook engine for evaluating events and triggering actions.
 """
 
 import logging
-from typing import List, Optional
 from pathlib import Path
+from typing import List, Optional
+
 import yaml
 
 from .models import (
     EventRef,
     Playbook,
     TriggeredAction,
-    Condition,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class PlaybookEngine:
                       domain: "{{fields.ioc_value}}"
         """
         try:
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = yaml.safe_load(f)
 
             if not data or "playbooks" not in data:

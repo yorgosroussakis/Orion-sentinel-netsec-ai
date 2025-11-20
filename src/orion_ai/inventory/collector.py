@@ -4,7 +4,7 @@ Device inventory data collection from logs.
 
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 
 from .models import Device, DeviceActivity
 
@@ -21,7 +21,9 @@ class DeviceCollector:
         self.seen_ips: Set[str] = set()
 
     def collect_from_loki_events(
-        self, events: List[Dict], existing_devices: Dict[str, Device],
+        self,
+        events: List[Dict],
+        existing_devices: Dict[str, Device],
     ) -> List[Device]:
         """
         Extract device information from Loki events.
@@ -75,8 +77,14 @@ class DeviceCollector:
 
         # Common field names for IPs
         ip_fields = [
-            "src_ip", "dest_ip", "client_ip", "server_ip",
-            "source_ip", "destination_ip", "ip", "host_ip",
+            "src_ip",
+            "dest_ip",
+            "client_ip",
+            "server_ip",
+            "source_ip",
+            "destination_ip",
+            "ip",
+            "host_ip",
         ]
 
         for field in ip_fields:
@@ -153,7 +161,11 @@ class DeviceCollector:
                 device.common_destinations.append(domain)
 
     def build_device_activity(
-        self, device_ip: str, events: List[Dict], period_start: datetime, period_end: datetime,
+        self,
+        device_ip: str,
+        events: List[Dict],
+        period_start: datetime,
+        period_end: datetime,
     ) -> DeviceActivity:
         """
         Build activity summary for a device over a time period.
