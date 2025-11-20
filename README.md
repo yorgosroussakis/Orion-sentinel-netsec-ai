@@ -80,6 +80,53 @@ Orion Sentinel is a comprehensive security monitoring platform combining network
 
 ## Quick Start
 
+Orion Sentinel offers two installation paths:
+
+### For Tinkerers: Web-Based Setup Wizard 🎯
+
+The easiest way to get started! After cloning and starting the services, use the interactive web wizard:
+
+1. **Clone and start**:
+   ```bash
+   git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+   cd Orion-sentinel-netsec-ai
+   cd stacks/ai
+   docker compose up -d wizard
+   ```
+
+2. **Open the wizard**:
+   Visit `http://<Pi2-IP>:8081` in your browser
+
+3. **Follow the guided setup**:
+   - Connect to your DNS Pi
+   - Configure network interface and security mode
+   - Enable AI detection and threat intelligence
+   - Apply configuration
+
+The wizard will configure everything for you! See [docs/quick-start.md](docs/quick-start.md) for details.
+
+### For Power Users: Command-Line Installation ⚡
+
+Use the automated install script for complete control:
+
+```bash
+git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+cd Orion-sentinel-netsec-ai
+./scripts/install.sh
+```
+
+The script will:
+- Check and install Docker if needed
+- Configure NSM interface and retention settings
+- Start NSM and optionally AI stacks
+- Display access URLs
+
+For manual installation and advanced options, see [docs/operations.md](docs/operations.md).
+
+---
+
+## Traditional Setup (Manual)
+
 ### Prerequisites
 
 - Docker & Docker Compose

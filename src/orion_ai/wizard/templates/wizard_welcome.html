@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orion Sentinel Setup Wizard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Orion Sentinel</h1>
+            <p class="subtitle">Security & Monitoring Setup Wizard</p>
+        </div>
+
+        <div class="content">
+            <div class="welcome-box">
+                <h2>Welcome to Your Security Pi!</h2>
+                
+                <p>This wizard will help you configure Orion Sentinel - your network security monitoring and AI-powered threat detection system.</p>
+                
+                <div class="info-box">
+                    <h3>What This Pi Does:</h3>
+                    <ul>
+                        <li><strong>Network Security Monitoring:</strong> Passive IDS with Suricata on mirrored traffic</li>
+                        <li><strong>AI Detection:</strong> Anomaly detection and domain risk scoring</li>
+                        <li><strong>Threat Intelligence:</strong> Real-time IOC feeds and correlation</li>
+                        <li><strong>Automated Response:</strong> SOAR-lite playbooks and actions</li>
+                        <li><strong>Visualization:</strong> Grafana dashboards for security insights</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h3>Setup Steps:</h3>
+                    <ol>
+                        <li>Connect to your DNS Pi (Pi #1)</li>
+                        <li>Configure network interface and security mode</li>
+                        <li>Enable AI detection and threat intelligence</li>
+                        <li>Review and apply configuration</li>
+                    </ol>
+                </div>
+
+                <p class="note">
+                    <strong>Note:</strong> This setup takes about 3-5 minutes. You can always adjust settings later through configuration files.
+                </p>
+
+                <div class="button-container">
+                    <a href="/wizard/dns" class="button button-primary">Start Setup</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Orion Sentinel v0.2.0 | For home/lab security monitoring</p>
+        </div>
+    </div>
+</body>
+</html>

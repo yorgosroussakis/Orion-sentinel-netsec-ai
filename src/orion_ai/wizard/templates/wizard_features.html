@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Features - Orion Sentinel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Orion Sentinel</h1>
+            <p class="subtitle">Step 3 of 4: AI & Intelligence Features</p>
+        </div>
+
+        <div class="content">
+            <div class="wizard-step">
+                <h2>Enable Advanced Features</h2>
+                
+                <p>Choose which AI and threat intelligence features to enable. You can always enable or disable these later.</p>
+
+                <form method="post" action="/wizard/features">
+                    <div class="feature-group">
+                        <div class="feature-card">
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="enable_ai" id="enable_ai">
+                                    <strong>🤖 AI Anomaly Detection</strong>
+                                </label>
+                            </div>
+                            <div class="feature-description">
+                                <p>Machine learning-based detection of unusual network behavior and suspicious domains.</p>
+                                <ul>
+                                    <li>Per-device anomaly detection</li>
+                                    <li>Domain risk scoring (DGA, phishing, C2)</li>
+                                    <li>Behavioral baseline learning</li>
+                                    <li>Runs locally on Raspberry Pi AI Hat</li>
+                                </ul>
+                                <div class="note">
+                                    <small><strong>Note:</strong> Requires AI models in <code>stacks/ai/models/</code></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" name="enable_intel" id="enable_intel" checked>
+                                    <strong>🌐 Threat Intelligence Feeds</strong>
+                                </label>
+                            </div>
+                            <div class="feature-description">
+                                <p>Real-time integration with community threat intelligence sources.</p>
+                                <ul>
+                                    <li>AlienVault OTX (malware, C2 domains)</li>
+                                    <li>abuse.ch URLhaus (malicious URLs)</li>
+                                    <li>abuse.ch Feodo Tracker (botnet C2)</li>
+                                    <li>PhishTank (phishing sites)</li>
+                                </ul>
+                                <div class="note">
+                                    <small><strong>Recommended:</strong> Provides immediate protection with known threats</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>💡 Recommendation:</strong>
+                        <ul>
+                            <li><strong>First-time users:</strong> Enable Threat Intelligence only. It's lightweight and immediately useful.</li>
+                            <li><strong>Advanced users:</strong> Enable both if you have AI models trained for your network.</li>
+                        </ul>
+                    </div>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Important:</strong>
+                        <p>For the first 24 hours, the system will operate in observation mode regardless of these settings. This allows it to build a baseline of normal behavior.</p>
+                    </div>
+
+                    <div class="button-container">
+                        <a href="/wizard/mode" class="button button-secondary">Back</a>
+                        <button type="submit" class="button button-primary">Next: Finish Setup</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Step 3 of 4</p>
+        </div>
+    </div>
+</body>
+</html>

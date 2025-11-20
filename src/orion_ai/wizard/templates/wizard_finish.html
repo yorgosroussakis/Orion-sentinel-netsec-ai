@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Complete - Orion Sentinel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Orion Sentinel</h1>
+            <p class="subtitle">Step 4 of 4: Setup Complete</p>
+        </div>
+
+        <div class="content">
+            <div class="wizard-step">
+                {% if success %}
+                <div class="success-box">
+                    <h2>✅ Configuration Applied Successfully!</h2>
+                    <p>Your Orion Sentinel Security Pi is now configured and ready to protect your network.</p>
+                </div>
+
+                <div class="config-summary">
+                    <h3>Configuration Summary:</h3>
+                    <pre>{{ message }}</pre>
+                </div>
+
+                <div class="next-steps">
+                    <h3>🎯 What to Expect Next</h3>
+                    
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <strong>First 24 Hours - Observation Mode</strong>
+                            <p>The system will observe and log all network activity to establish a baseline of normal behavior. No blocking actions will be taken.</p>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <strong>After Baseline Period</strong>
+                            <p>{% if config.operating_mode == "observe" %}
+                                System will continue in observation mode. Check Grafana dashboards regularly to review detected events.
+                            {% elif config.operating_mode == "alert" %}
+                                System will send notifications for high-severity events. Review alerts and adjust thresholds as needed.
+                            {% elif config.operating_mode == "safe_block" %}
+                                System will automatically block high-confidence threats (≥90% confidence). Monitor the blocklist in Pi-hole.
+                            {% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="access-info">
+                    <h3>📊 Access Your Security Dashboard</h3>
+                    
+                    <div class="service-links">
+                        <div class="service-card">
+                            <h4>Grafana Dashboards</h4>
+                            <p>View security events, metrics, and analytics</p>
+                            <a href="http://{{ request.url.hostname }}:3000" target="_blank" class="button button-primary">
+                                Open Grafana →
+                            </a>
+                            <small>Default credentials: admin / admin (change on first login)</small>
+                        </div>
+
+                        {% if config.enable_ai %}
+                        <div class="service-card">
+                            <h4>AI API (Optional)</h4>
+                            <p>API for device profiles and queries</p>
+                            <a href="http://{{ request.url.hostname }}:8000/docs" target="_blank" class="button button-secondary">
+                                View API Docs →
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3>📚 Additional Resources</h3>
+                    <ul>
+                        <li><strong>Operations Guide:</strong> <code>docs/operations.md</code> - Backup, restore, upgrades</li>
+                        <li><strong>SOAR Playbooks:</strong> <code>docs/soar.md</code> - Configure automated responses</li>
+                        <li><strong>Device Inventory:</strong> <code>docs/inventory.md</code> - Manage device profiles</li>
+                        <li><strong>Configuration Files:</strong>
+                            <ul>
+                                <li><code>stacks/nsm/.env</code> - Network monitoring settings</li>
+                                <li><code>stacks/ai/.env</code> - AI and intelligence settings</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="warning-box">
+                    <strong>⚠️ Important Next Steps:</strong>
+                    <ol>
+                        <li>Configure your router/switch to mirror traffic to interface: <code>{{ config.nsm_iface }}</code></li>
+                        <li>Set up DNS log shipping from Pi #1 (see <code>docs/integration-orion-dns-ha.md</code>)</li>
+                        <li>Change the Grafana admin password on first login</li>
+                        <li>Review and customize SOAR playbooks in <code>config/playbooks.yml</code></li>
+                    </ol>
+                </div>
+
+                {% else %}
+                <div class="error-box">
+                    <h2>❌ Configuration Failed</h2>
+                    <p>{{ message }}</p>
+                    <p>Please check the logs and try again, or configure manually by editing the files in <code>stacks/nsm/.env</code> and <code>stacks/ai/.env</code></p>
+                </div>
+                {% endif %}
+
+                <div class="button-container">
+                    {% if success %}
+                    <a href="http://{{ request.url.hostname }}:3000" target="_blank" class="button button-primary">Open Grafana</a>
+                    {% else %}
+                    <a href="/wizard/welcome" class="button button-primary">Start Over</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Orion Sentinel v0.2.0 | Setup Wizard Complete</p>
+        </div>
+    </div>
+</body>
+</html>

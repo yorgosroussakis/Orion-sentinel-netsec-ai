@@ -140,6 +140,25 @@ services:
     networks:
       - orion-network
 
+  # Setup Wizard (First-run configuration UI)
+  wizard:
+    build:
+      context: ../..
+      dockerfile: stacks/ai/Dockerfile
+    container_name: orion-wizard
+    command: python -m uvicorn orion_ai.wizard.app:app --host 0.0.0.0 --port 8081
+    environment:
+      - ORION_DEV_MODE=${ORION_DEV_MODE:-0}
+      - LOG_LEVEL=INFO
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../../stacks:/app/stacks
+      - wizard-data:/tmp
+    restart: unless-stopped
+    networks:
+      - orion-network
+
 volumes:
   soar-data:
   inventory-data:
@@ -147,6 +166,7 @@ volumes:
   health-data:
   loki-data:
   grafana-data:
+  wizard-data:
 
 networks:
   orion-network:

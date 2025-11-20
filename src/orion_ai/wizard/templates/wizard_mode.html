@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network & Mode - Orion Sentinel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Orion Sentinel</h1>
+            <p class="subtitle">Step 2 of 4: Network & Security Mode</p>
+        </div>
+
+        <div class="content">
+            <div class="wizard-step">
+                <h2>Network Configuration</h2>
+                
+                <form method="post" action="/wizard/mode">
+                    <div class="form-group">
+                        <label for="nsm_iface">Network Interface for Monitoring:</label>
+                        <input 
+                            type="text" 
+                            id="nsm_iface" 
+                            name="nsm_iface" 
+                            value="eth0" 
+                            required
+                            placeholder="e.g., eth0, eth1, wlan0"
+                        >
+                        <small>
+                            The network interface receiving mirrored/SPAN traffic from your router/switch.<br>
+                            Run <code>ip link show</code> to see available interfaces.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Operating Mode:</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="operating_mode" value="observe" checked>
+                                <div class="radio-content">
+                                    <strong>👀 Observe Only</strong>
+                                    <p>Log all events without taking any actions. Best for initial deployment and testing.</p>
+                                    <ul>
+                                        <li>All detections logged to Grafana</li>
+                                        <li>No automated blocking</li>
+                                        <li>No notifications sent</li>
+                                        <li><em>Recommended for first 24-48 hours</em></li>
+                                    </ul>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="operating_mode" value="alert">
+                                <div class="radio-content">
+                                    <strong>🔔 Alert Only</strong>
+                                    <p>Log events and send notifications, but don't block anything automatically.</p>
+                                    <ul>
+                                        <li>All detections logged</li>
+                                        <li>Notifications for high-severity events</li>
+                                        <li>No automated blocking</li>
+                                        <li><em>Good for monitoring without disruption</em></li>
+                                    </ul>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="operating_mode" value="safe_block">
+                                <div class="radio-content">
+                                    <strong>🛡️ Safe Block</strong>
+                                    <p>Automatically block domains from high-confidence threat intelligence matches.</p>
+                                    <ul>
+                                        <li>All detections logged</li>
+                                        <li>Notifications enabled</li>
+                                        <li>Automated blocking for confirmed threats (≥90% confidence)</li>
+                                        <li><em>Production mode after testing</em></li>
+                                    </ul>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <strong>ℹ️ About Operating Modes:</strong>
+                        <p>You can change the operating mode later by editing <code>stacks/ai/.env</code> and restarting the AI services.</p>
+                    </div>
+
+                    <div class="button-container">
+                        <a href="/wizard/dns" class="button button-secondary">Back</a>
+                        <button type="submit" class="button button-primary">Next: AI Features</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Step 2 of 4</p>
+        </div>
+    </div>
+</body>
+</html>

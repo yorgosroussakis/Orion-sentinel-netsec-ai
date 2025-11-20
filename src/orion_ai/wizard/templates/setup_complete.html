@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Complete - Orion Sentinel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Orion Sentinel</h1>
+            <p class="subtitle">Security & Monitoring Pi</p>
+        </div>
+
+        <div class="content">
+            <div class="complete-box">
+                <h2>✅ Setup Already Complete</h2>
+                
+                <p>Your Orion Sentinel Security Pi has already been configured.</p>
+
+                <div class="service-links">
+                    <div class="service-card">
+                        <h3>Grafana Dashboards</h3>
+                        <p>View security events, metrics, and analytics</p>
+                        <a href="http://{{ request.url.hostname }}:3000" target="_blank" class="button button-primary">
+                            Open Grafana →
+                        </a>
+                    </div>
+
+                    <div class="service-card">
+                        <h3>API Documentation</h3>
+                        <p>REST API for device profiles and queries</p>
+                        <a href="http://{{ request.url.hostname }}:8000/docs" target="_blank" class="button button-secondary">
+                            View API Docs →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3>Need to Reconfigure?</h3>
+                    <p>To run the setup wizard again:</p>
+                    <ol>
+                        <li>SSH into this Pi</li>
+                        <li>Run: <code>sudo rm /tmp/.orion_setup_done</code></li>
+                        <li>Restart the wizard service: <code>docker compose restart orion-wizard</code></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                    <p>Or manually edit configuration files in <code>stacks/nsm/.env</code> and <code>stacks/ai/.env</code></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Orion Sentinel v0.2.0</p>
+        </div>
+    </div>
+</body>
+</html>
