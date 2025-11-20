@@ -48,6 +48,12 @@ Orion Sentinel is a comprehensive security monitoring platform combining network
 - Natural language assistant (pattern-based)
 - Timeline views
 
+### 📊 Grafana Dashboards
+- **SOC Management Dashboard**: Executive overview with health score, key metrics, and recent events
+- **DNS & Pi-hole Dashboard**: DNS query analysis, block rates, and top domains
+- Auto-provisioned on startup
+- Real-time updates (30s refresh)
+
 ## Architecture
 
 ```
@@ -159,6 +165,7 @@ See individual service documentation for details.
 - [Lab Mode](docs/lab-mode.md)
 - [Host Logs (EDR-lite)](docs/host-logs.md)
 - [Honeypot Integration](src/orion_ai/honeypot/design.md)
+- [Grafana Dashboards](config/grafana/README.md)
 
 ## Module Structure
 
