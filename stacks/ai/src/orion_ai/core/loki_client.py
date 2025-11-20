@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 import requests
 from requests.auth import HTTPBasicAuth
 
-from orion_ai.config import get_config
+from orion_ai.core.config import get_config
 
 logger = logging.getLogger(__name__)
 
