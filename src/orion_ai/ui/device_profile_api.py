@@ -23,27 +23,27 @@ class DeviceProfile(BaseModel):
     ip: str
     mac: Optional[str] = None
     hostname: Optional[str] = None
-    
+
     # Classification
     device_type: Optional[str] = None
     tags: List[str] = []
     owner: Optional[str] = None
-    
+
     # Activity summary
     first_seen: Optional[datetime] = None
     last_seen: Optional[datetime] = None
-    
+
     # Recent events (counts)
     suricata_alerts_24h: int = 0
     dns_queries_24h: int = 0
     ai_anomalies_24h: int = 0
     intel_matches_24h: int = 0
     change_events_24h: int = 0
-    
+
     # Risk
     risk_score: float = 0.0
     risk_factors: List[str] = []
-    
+
     # Network behavior
     top_destinations: List[str] = []
     open_ports: List[int] = []
@@ -74,15 +74,15 @@ class DeviceTimeline(BaseModel):
 async def get_device_profile(ip: str) -> DeviceProfile:
     """
     Get complete profile for a device.
-    
+
     Aggregates data from:
     - Inventory database
     - Loki (Suricata, DNS, AI, Intel events)
     - Change monitor
-    
+
     Args:
         ip: IP address of device
-        
+
     Returns:
         Device profile
     """
@@ -93,9 +93,9 @@ async def get_device_profile(ip: str) -> DeviceProfile:
     #    - {client_ip="<ip>"} for DNS
     #    - {device_ip="<ip>"} for AI/Intel
     # 3. Aggregate and return
-    
+
     logger.info(f"Fetching profile for device: {ip}")
-    
+
     # Placeholder response
     profile = DeviceProfile(
         ip=ip,
@@ -105,7 +105,7 @@ async def get_device_profile(ip: str) -> DeviceProfile:
         tags=["lab"],
         risk_score=0.2,
     )
-    
+
     return profile
 
 
@@ -116,27 +116,27 @@ async def get_device_timeline(
 ) -> DeviceTimeline:
     """
     Get timeline of events for a device.
-    
+
     Returns time-ordered list of significant events.
-    
+
     Args:
         ip: IP address of device
         hours: How many hours of history to fetch (1-168)
-        
+
     Returns:
         Device timeline
     """
     end_time = datetime.utcnow()
     start_time = end_time - timedelta(hours=hours)
-    
+
     logger.info(f"Fetching timeline for {ip} ({hours}h)")
-    
+
     # TODO: Implement actual timeline fetching
     # 1. Query Loki for all events related to device
     # 2. Sort by timestamp
     # 3. Format as TimelineEvent objects
     # 4. Return with pagination
-    
+
     timeline = DeviceTimeline(
         device_ip=ip,
         start_time=start_time,
@@ -144,7 +144,7 @@ async def get_device_timeline(
         events=[],
         total_events=0,
     )
-    
+
     return timeline
 
 
@@ -155,19 +155,19 @@ async def get_device_alerts(
 ) -> List[Dict[str, Any]]:
     """
     Get recent alerts for a device.
-    
+
     Args:
         ip: IP address
         hours: Hours of history
-        
+
     Returns:
         List of alerts
     """
     logger.info(f"Fetching alerts for {ip} ({hours}h)")
-    
+
     # TODO: Query Loki for alerts where src_ip or dest_ip matches
     # Service labels: suricata, threat_intel, ai
-    
+
     return []
 
 
@@ -179,19 +179,19 @@ async def get_device_dns_queries(
 ) -> List[Dict[str, Any]]:
     """
     Get recent DNS queries from a device.
-    
+
     Args:
         ip: IP address
         hours: Hours of history
         limit: Maximum queries to return
-        
+
     Returns:
         List of DNS queries
     """
     logger.info(f"Fetching DNS queries for {ip} ({hours}h, limit={limit})")
-    
+
     # TODO: Query Loki for DNS events where client_ip matches
-    
+
     return []
 
 
@@ -199,21 +199,21 @@ async def get_device_dns_queries(
 async def tag_device(ip: str, tag: str) -> Dict[str, str]:
     """
     Add a tag to a device.
-    
+
     Args:
         ip: IP address
         tag: Tag to add
-        
+
     Returns:
         Status message
     """
     logger.info(f"Tagging device {ip} with '{tag}'")
-    
+
     # TODO: Update inventory store
     # from orion_ai.inventory.store import InventoryStore
     # store = InventoryStore()
     # success = store.tag_device(ip, tag)
-    
+
     return {"status": "success", "message": f"Tagged {ip} with '{tag}' (TODO)"}
 
 
@@ -224,17 +224,17 @@ async def list_devices(
 ) -> List[DeviceProfile]:
     """
     List all devices with optional filtering.
-    
+
     Args:
         tag: Optional tag filter
         limit: Maximum devices to return
-        
+
     Returns:
         List of device profiles
     """
     logger.info(f"Listing devices (tag={tag}, limit={limit})")
-    
+
     # TODO: Query inventory store
     # Apply filters and return device profiles
-    
+
     return []

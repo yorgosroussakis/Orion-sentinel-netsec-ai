@@ -7,7 +7,7 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from .models import Device
 
@@ -17,14 +17,14 @@ logger = logging.getLogger(__name__)
 class InventoryStore:
     """
     Persistent storage for device inventory using SQLite.
-    
+
     Provides CRUD operations for devices.
     """
 
     def __init__(self, db_path: str = "/data/inventory.db"):
         """
         Initialize inventory store.
-        
+
         Args:
             db_path: Path to SQLite database file
         """
@@ -55,23 +55,23 @@ class InventoryStore:
                     metadata TEXT
                 )
             """)
-            
+
             # Indexes for common queries
             conn.execute("CREATE INDEX IF NOT EXISTS idx_last_seen ON devices(last_seen)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_tags ON devices(tags)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_risk_score ON devices(risk_score)")
-            
+
             conn.commit()
-        
+
         logger.info(f"Initialized inventory database at {self.db_path}")
 
     def get_device(self, ip: str) -> Optional[Device]:
         """
         Get device by IP address.
-        
+
         Args:
             ip: IP address
-            
+
         Returns:
             Device or None if not found
         """
@@ -79,21 +79,21 @@ class InventoryStore:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute("SELECT * FROM devices WHERE ip = ?", (ip,))
             row = cursor.fetchone()
-            
+
             if not row:
                 return None
-            
+
             return self._row_to_device(dict(row))
 
     def upsert_device(self, device: Device) -> None:
         """
         Insert or update device.
-        
+
         Args:
             device: Device to save
         """
         device_dict = device.dict()
-        
+
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
@@ -122,46 +122,46 @@ class InventoryStore:
                 ),
             )
             conn.commit()
-        
+
         logger.debug(f"Saved device: {device.ip}")
 
     def list_devices(
-        self, tags: Optional[List[str]] = None, limit: Optional[int] = None
+        self, tags: Optional[List[str]] = None, limit: Optional[int] = None,
     ) -> List[Device]:
         """
         List devices with optional filtering.
-        
+
         Args:
             tags: Filter by tags (OR logic)
             limit: Maximum number of devices to return
-            
+
         Returns:
             List of devices
         """
         query = "SELECT * FROM devices"
-        params = []
-        
+        params: List[Any] = []
+
         # TODO: Implement tag filtering (requires JSON support or normalization)
-        
+
         query += " ORDER BY last_seen DESC"
-        
+
         if limit:
             query += f" LIMIT {limit}"
-        
+
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(query, params)
             rows = cursor.fetchall()
-            
+
             return [self._row_to_device(dict(row)) for row in rows]
 
     def list_new_devices_since(self, since: datetime) -> List[Device]:
         """
         List devices first seen since a given time.
-        
+
         Args:
             since: Datetime threshold
-            
+
         Returns:
             List of new devices
         """
@@ -172,17 +172,17 @@ class InventoryStore:
                 (since.isoformat(),),
             )
             rows = cursor.fetchall()
-            
+
             return [self._row_to_device(dict(row)) for row in rows]
 
     def tag_device(self, ip: str, tag: str) -> bool:
         """
         Add a tag to a device.
-        
+
         Args:
             ip: Device IP
             tag: Tag to add
-            
+
         Returns:
             True if successful
         """
@@ -190,12 +190,12 @@ class InventoryStore:
         if not device:
             logger.warning(f"Device {ip} not found for tagging")
             return False
-        
+
         if tag not in device.tags:
             device.tags.append(tag)
             self.upsert_device(device)
             logger.info(f"Tagged device {ip} with '{tag}'")
-        
+
         return True
 
     def _row_to_device(self, row: Dict) -> Device:
@@ -225,17 +225,17 @@ class InventoryStore:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("SELECT COUNT(*) as total FROM devices")
             total = cursor.fetchone()[0]
-            
+
             cursor = conn.execute(
-                "SELECT COUNT(*) as high_risk FROM devices WHERE risk_score > 0.7"
+                "SELECT COUNT(*) as high_risk FROM devices WHERE risk_score > 0.7",
             )
             high_risk = cursor.fetchone()[0]
-            
+
             cursor = conn.execute(
-                "SELECT COUNT(*) as unknown FROM devices WHERE guess_type IS NULL OR guess_type = 'unknown'"
+                "SELECT COUNT(*) as unknown FROM devices WHERE guess_type IS NULL OR guess_type = 'unknown'",
             )
             unknown = cursor.fetchone()[0]
-            
+
             return {
                 "total_devices": total,
                 "high_risk_devices": high_risk,

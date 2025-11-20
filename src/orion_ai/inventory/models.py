@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 class Device(BaseModel):
     """
     Represents a network device in the inventory.
-    
+
     Tracks device identity, classification, and metadata.
     """
 
@@ -35,7 +35,7 @@ class Device(BaseModel):
         description="Inferred device type (TV, phone, NAS, unknown)",
     )
     owner: Optional[str] = Field(None, description="Device owner/responsible party")
-    
+
     # Additional metadata
     vendor: Optional[str] = Field(None, description="Device vendor (from MAC OUI)")
     os_guess: Optional[str] = Field(None, description="Operating system guess")
@@ -47,7 +47,7 @@ class Device(BaseModel):
         default_factory=list,
         description="Frequently contacted domains/IPs",
     )
-    
+
     # Risk scoring
     risk_score: float = Field(
         default=0.0,
@@ -63,7 +63,7 @@ class Device(BaseModel):
         default=0,
         description="Number of threat intel matches",
     )
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -81,7 +81,7 @@ class Device(BaseModel):
                 "risk_score": 0.1,
                 "anomaly_count": 0,
                 "intel_match_count": 0,
-            }
+            },
         }
 
 
@@ -93,19 +93,19 @@ class DeviceActivity(BaseModel):
     device_ip: str
     time_period_start: datetime
     time_period_end: datetime
-    
+
     # Activity metrics
     connection_count: int = 0
     unique_destinations: int = 0
     bytes_sent: int = 0
     bytes_received: int = 0
     dns_queries: int = 0
-    
+
     # Protocol breakdown
     tcp_connections: int = 0
     udp_connections: int = 0
     icmp_packets: int = 0
-    
+
     # Alerts
     suricata_alerts: int = 0
     ai_anomalies: int = 0
@@ -121,7 +121,7 @@ class InventoryEvent(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     device_ip: str
     details: dict = Field(default_factory=dict)
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -132,5 +132,5 @@ class InventoryEvent(BaseModel):
                     "mac": "11:22:33:44:55:66",
                     "hostname": "unknown-device",
                 },
-            }
+            },
         }

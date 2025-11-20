@@ -65,7 +65,7 @@ def main():
     """Main entry point for HTTP server."""
     host = os.getenv("API_HOST", "0.0.0.0")
     port = int(os.getenv("API_PORT", "8000"))
-    
+
     logger.info("=" * 60)
     logger.info("Orion Sentinel - API Server")
     logger.info("=" * 60)
@@ -74,7 +74,7 @@ def main():
     logger.info("=" * 60)
     logger.info(f"API Documentation: http://{host}:{port}/docs")
     logger.info("=" * 60)
-    
+
     uvicorn.run(
         "orion_ai.ui.http_server:app",
         host=host,

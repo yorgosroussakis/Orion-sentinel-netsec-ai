@@ -32,16 +32,16 @@ class Baseline(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     period_start: datetime
     period_end: datetime
-    
+
     # Global baseline data
     total_devices: int = 0
     device_ips: List[str] = Field(default_factory=list)
     all_observed_ports: List[int] = Field(default_factory=list)
     all_observed_domains: List[str] = Field(default_factory=list)
-    
+
     # Per-device baselines
     device_baselines: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -53,7 +53,7 @@ class Baseline(BaseModel):
                 "device_ips": ["192.168.1.10", "192.168.1.20"],
                 "all_observed_ports": [80, 443, 8080],
                 "all_observed_domains": ["google.com", "github.com"],
-            }
+            },
         }
 
 
@@ -62,17 +62,17 @@ class DeviceBaseline(BaseModel):
 
     device_ip: str
     snapshot_timestamp: datetime
-    
+
     # Behavioral baseline
     observed_ports: List[int] = Field(default_factory=list)
     observed_domains: List[str] = Field(default_factory=list)
     observed_destinations: List[str] = Field(default_factory=list)
     typical_protocols: List[str] = Field(default_factory=list)
-    
+
     # Activity baseline
     avg_connections_per_day: float = 0.0
     avg_bytes_per_day: float = 0.0
-    
+
     # Metadata
     tags: List[str] = Field(default_factory=list)
     risk_score: float = 0.0
@@ -86,22 +86,22 @@ class ChangeEvent(BaseModel):
     change_id: str
     change_type: ChangeType
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    
+
     # What changed
     entity: str  # IP address, device ID, etc.
     entity_type: str = "device"  # device, global, service
-    
+
     # Change details
     old_value: Optional[Any] = None
     new_value: Optional[Any] = None
     details: Dict[str, Any] = Field(default_factory=dict)
-    
+
     # Risk assessment
     risk_level: str = "low"  # low, medium, high, critical
-    
+
     # Context
     baseline_id: Optional[str] = None
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -114,5 +114,5 @@ class ChangeEvent(BaseModel):
                 "new_value": [80, 443, 22],
                 "details": {"new_port": 22, "first_seen": "2025-01-15T10:00:00Z"},
                 "risk_level": "medium",
-            }
+            },
         }

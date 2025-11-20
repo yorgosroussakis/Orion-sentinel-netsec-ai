@@ -20,7 +20,7 @@ SOAR_DRY_RUN = os.getenv("SOAR_DRY_RUN", "1").lower() in ("1", "true", "yes")
 class ActionExecutor:
     """
     Executes SOAR actions with safety controls.
-    
+
     Supports both dry-run simulation and actual execution.
     """
 
@@ -32,7 +32,7 @@ class ActionExecutor:
     ):
         """
         Initialize action executor.
-        
+
         Args:
             dry_run: If True, only simulate actions without executing
             pihole_url: URL of Pi-hole instance for blocking
@@ -41,7 +41,7 @@ class ActionExecutor:
         self.dry_run = dry_run
         self.pihole_url = pihole_url or os.getenv("PIHOLE_URL", "http://192.168.1.2")
         self.pihole_api_key = pihole_api_key or os.getenv("PIHOLE_API_KEY", "")
-        
+
         if self.dry_run:
             logger.info("ActionExecutor initialized in DRY RUN mode - no actions will be executed")
         else:
@@ -50,21 +50,21 @@ class ActionExecutor:
     def execute(self, triggered_action: TriggeredAction) -> TriggeredAction:
         """
         Execute a triggered action.
-        
+
         Args:
             triggered_action: The action to execute
-            
+
         Returns:
             Updated TriggeredAction with execution results
         """
         action = triggered_action.action
         action_type = action.action_type
-        
+
         logger.info(
             f"{'[DRY RUN] ' if self.dry_run else ''}Executing action: {action_type} "
-            f"from playbook {triggered_action.playbook_name}"
+            f"from playbook {triggered_action.playbook_name}",
         )
-        
+
         try:
             if action_type == ActionType.BLOCK_DOMAIN:
                 result = self.execute_block_domain(
@@ -87,39 +87,39 @@ class ActionExecutor:
                 result = {"simulated": True, "parameters": action.parameters}
             else:
                 raise ValueError(f"Unknown action type: {action_type}")
-            
+
             triggered_action.executed = not self.dry_run
             triggered_action.success = True
             triggered_action.result = result
-            
+
         except Exception as e:
             logger.error(f"Action execution failed: {e}", exc_info=True)
             triggered_action.executed = False
             triggered_action.success = False
             triggered_action.error_message = str(e)
             triggered_action.result = None
-        
+
         return triggered_action
 
     def execute_block_domain(self, domain: str, reason: str = "") -> Dict[str, Any]:
         """
         Block a domain via Pi-hole.
-        
+
         Args:
             domain: Domain to block
             reason: Reason for blocking (for logging)
-            
+
         Returns:
             Result dictionary with status
         """
         if not domain:
             raise ValueError("Domain parameter is required")
-        
+
         log_msg = f"{'[DRY RUN] Would block' if self.dry_run else 'Blocking'} domain: {domain}"
         if reason:
             log_msg += f" (Reason: {reason})"
         logger.info(log_msg)
-        
+
         if self.dry_run:
             return {
                 "action": "block_domain",
@@ -127,17 +127,17 @@ class ActionExecutor:
                 "reason": reason,
                 "dry_run": True,
             }
-        
+
         # TODO: Implement actual Pi-hole API call
         # from orion_ai.integrations.pihole import PiHoleClient
         # client = PiHoleClient(self.pihole_url, self.pihole_api_key)
         # result = client.add_to_blacklist(domain, comment=reason)
         # return result
-        
+
         logger.warning(
-            "Pi-hole integration not yet implemented - action simulated"
+            "Pi-hole integration not yet implemented - action simulated",
         )
-        
+
         return {
             "action": "block_domain",
             "domain": domain,
@@ -149,22 +149,22 @@ class ActionExecutor:
     def execute_tag_device(self, device_ip: str, tag: str) -> Dict[str, Any]:
         """
         Tag a device in the inventory.
-        
+
         Args:
             device_ip: IP address of device
             tag: Tag to add to device
-            
+
         Returns:
             Result dictionary with status
         """
         if not device_ip or not tag:
             raise ValueError("device_ip and tag parameters are required")
-        
+
         logger.info(
             f"{'[DRY RUN] Would tag' if self.dry_run else 'Tagging'} "
-            f"device {device_ip} with tag: {tag}"
+            f"device {device_ip} with tag: {tag}",
         )
-        
+
         if self.dry_run:
             return {
                 "action": "tag_device",
@@ -172,7 +172,7 @@ class ActionExecutor:
                 "tag": tag,
                 "dry_run": True,
             }
-        
+
         # TODO: Implement inventory integration
         # from orion_ai.inventory.store import InventoryStore
         # store = InventoryStore()
@@ -181,11 +181,11 @@ class ActionExecutor:
         #     device.tags.append(tag)
         #     store.upsert_device(device)
         # return {"tagged": True}
-        
+
         logger.warning(
-            "Inventory integration not yet fully implemented - action simulated"
+            "Inventory integration not yet fully implemented - action simulated",
         )
-        
+
         return {
             "action": "tag_device",
             "device_ip": device_ip,
@@ -195,26 +195,26 @@ class ActionExecutor:
         }
 
     def execute_send_notification(
-        self, message: str, severity: str = "info"
+        self, message: str, severity: str = "info",
     ) -> Dict[str, Any]:
         """
         Send a notification via configured channel.
-        
+
         Args:
             message: Notification message
             severity: Severity level (info, warning, critical)
-            
+
         Returns:
             Result dictionary with status
         """
         if not message:
             raise ValueError("message parameter is required")
-        
+
         logger.info(
             f"{'[DRY RUN] Would send' if self.dry_run else 'Sending'} "
-            f"{severity.upper()} notification: {message}"
+            f"{severity.upper()} notification: {message}",
         )
-        
+
         if self.dry_run:
             return {
                 "action": "send_notification",
@@ -222,14 +222,14 @@ class ActionExecutor:
                 "severity": severity,
                 "dry_run": True,
             }
-        
+
         # TODO: Implement notification channels
         # Options: Signal, Telegram, Email, Webhook
         # For now, just log
         logger.warning(
-            f"[NOTIFICATION] [{severity.upper()}] {message}"
+            f"[NOTIFICATION] [{severity.upper()}] {message}",
         )
-        
+
         return {
             "action": "send_notification",
             "message": message,
@@ -242,15 +242,15 @@ class ActionExecutor:
     def execute_log_event(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """
         Log an event (for audit/tracking).
-        
+
         Args:
             parameters: Event parameters to log
-            
+
         Returns:
             Result dictionary with status
         """
         logger.info(f"Logging SOAR event: {parameters}")
-        
+
         # This action always executes, even in dry run
         return {
             "action": "log_event",
@@ -267,7 +267,7 @@ class ActionLogger:
     def __init__(self, loki_url: Optional[str] = None):
         """
         Initialize action logger.
-        
+
         Args:
             loki_url: URL of Loki instance for logging
         """
@@ -276,13 +276,13 @@ class ActionLogger:
     def log_action(self, triggered_action: TriggeredAction) -> None:
         """
         Log a triggered action to Loki.
-        
+
         Args:
             triggered_action: The action that was triggered/executed
         """
         # TODO: Implement Loki push API call
         # Format as JSON with labels: service=soar, stream=soar_action
-        
+
         log_entry = {
             "playbook_id": triggered_action.playbook_id,
             "playbook_name": triggered_action.playbook_name,
@@ -293,9 +293,9 @@ class ActionLogger:
             "event_type": triggered_action.event_ref.event_type,
             "error": triggered_action.error_message,
         }
-        
+
         logger.info(f"SOAR Action Log: {log_entry}")
-        
+
         # TODO: Push to Loki
         # POST to {loki_url}/loki/api/v1/push
         # with labels: {service="soar", stream="soar_action"}

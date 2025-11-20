@@ -38,7 +38,7 @@ class AssistantResponse(BaseModel):
 class SimpleAssistant:
     """
     Simple pattern-based assistant.
-    
+
     Recognizes common query patterns and executes appropriate Loki queries.
     Can be enhanced later with LLM integration.
     """
@@ -75,25 +75,27 @@ class SimpleAssistant:
     def process_query(self, query: AssistantQuery) -> AssistantResponse:
         """
         Process a natural language query.
-        
+
         Args:
             query: User query
-            
+
         Returns:
             Assistant response
         """
         question_lower = query.question.lower()
-        
+
         # Try to match patterns
         for pattern_def in self.PATTERNS:
             match = re.search(pattern_def["pattern"], question_lower, re.IGNORECASE)
             if match:
                 handler_name = pattern_def["handler"]
                 handler = getattr(self, handler_name, None)
-                
-                if handler:
-                    return handler(match, query)
-        
+
+                if handler and callable(handler):
+                    result = handler(match, query)
+                    # Type assertion - all handlers return AssistantResponse
+                    return result  # type: ignore[no-any-return]
+
         # No pattern matched
         return AssistantResponse(
             answer="I'm not sure how to answer that. Try asking about:\n"
@@ -111,19 +113,19 @@ class SimpleAssistant:
         )
 
     def handle_suspicious_activity(
-        self, match: re.Match, query: AssistantQuery
+        self, match: re.Match, query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about suspicious activity for an IP."""
         ip = match.group(1)
-        
+
         # TODO: Query Loki for:
         # - High-severity Suricata alerts
         # - AI anomalies
         # - Intel matches
         # for this IP in last 24h
-        
+
         logger.info(f"Assistant: Fetching suspicious activity for {ip}")
-        
+
         return AssistantResponse(
             answer=f"Checking suspicious activity for {ip} in the last 24 hours...\n\n"
                    f"TODO: Query Loki for:\n"
@@ -136,13 +138,13 @@ class SimpleAssistant:
         )
 
     def handle_device_alerts(
-        self, match: re.Match, query: AssistantQuery
+        self, match: re.Match, query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about alerts for a device."""
         ip = match.group(1)
-        
+
         logger.info(f"Assistant: Fetching alerts for {ip}")
-        
+
         return AssistantResponse(
             answer=f"Fetching alerts for device {ip}...\n\n"
                    f"TODO: Implement Loki query for alerts",
@@ -152,13 +154,13 @@ class SimpleAssistant:
         )
 
     def handle_new_devices(
-        self, match: re.Match, query: AssistantQuery
+        self, match: re.Match, query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about new devices."""
         logger.info("Assistant: Fetching new devices")
-        
+
         # TODO: Query inventory for devices first seen in last 7 days
-        
+
         return AssistantResponse(
             answer="Checking for new devices in the last 7 days...\n\n"
                    "TODO: Query inventory database",
@@ -168,13 +170,13 @@ class SimpleAssistant:
         )
 
     def handle_health_score(
-        self, match: re.Match, query: AssistantQuery
+        self, match: re.Match, query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about health score."""
         logger.info("Assistant: Fetching health score")
-        
+
         # TODO: Query latest health score from Loki or service
-        
+
         return AssistantResponse(
             answer="Fetching latest security health score...\n\n"
                    "TODO: Query health score service or Loki",
@@ -184,16 +186,16 @@ class SimpleAssistant:
         )
 
     def handle_top_threats(
-        self, match: re.Match, query: AssistantQuery
+        self, match: re.Match, query: AssistantQuery,
     ) -> AssistantResponse:
         """Handle queries about top threats."""
         logger.info("Assistant: Fetching top threats")
-        
+
         # TODO: Query Loki for most common:
         # - Suricata alert signatures
         # - Intel-matched IPs/domains
         # - High-risk devices
-        
+
         return AssistantResponse(
             answer="Analyzing top threats...\n\n"
                    "TODO: Aggregate threat data from Loki",
@@ -211,13 +213,13 @@ assistant = SimpleAssistant()
 async def query_assistant(query: AssistantQuery) -> AssistantResponse:
     """
     Query the assistant with a natural language question.
-    
+
     Args:
         query: User question
-        
+
     Returns:
         Assistant response with answer and data
-    
+
     Example queries:
     - "Show me suspicious activity from 192.168.1.50 in last 24h"
     - "What are the new devices?"
@@ -225,9 +227,9 @@ async def query_assistant(query: AssistantQuery) -> AssistantResponse:
     - "Show me top threats"
     """
     logger.info(f"Assistant query: {query.question}")
-    
+
     response = assistant.process_query(query)
-    
+
     return response
 
 
@@ -235,7 +237,7 @@ async def query_assistant(query: AssistantQuery) -> AssistantResponse:
 async def get_suggestions() -> List[str]:
     """
     Get example queries that the assistant can handle.
-    
+
     Returns:
         List of example questions
     """

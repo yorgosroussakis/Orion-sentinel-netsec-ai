@@ -41,7 +41,7 @@ class HostEventSeverity(str, Enum):
 class HostEvent(BaseModel):
     """
     Normalized host event from endpoint agents.
-    
+
     This model provides a unified representation of events from
     various sources (Wazuh, osquery, syslog, etc.).
     """
@@ -55,20 +55,20 @@ class HostEvent(BaseModel):
     )
     severity: HostEventSeverity = HostEventSeverity.LOW
     source: str = Field(..., description="Source agent (wazuh, osquery, syslog, etc.)")
-    
+
     # Optional fields
     user: Optional[str] = Field(None, description="User associated with event")
     process: Optional[str] = Field(None, description="Process name")
     pid: Optional[int] = Field(None, description="Process ID")
     file_path: Optional[str] = Field(None, description="File path if applicable")
     ip_address: Optional[str] = Field(None, description="IP address if applicable")
-    
+
     # Correlation
     related_alerts: list[str] = Field(
         default_factory=list,
         description="IDs of related alerts/events",
     )
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -84,5 +84,5 @@ class HostEvent(BaseModel):
                 "user": "john",
                 "process": "python3",
                 "pid": 12345,
-            }
+            },
         }

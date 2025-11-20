@@ -49,7 +49,7 @@ class ConditionOperator(str, Enum):
 class EventRef(BaseModel):
     """
     Reference to an event in Loki or other log storage.
-    
+
     This is a generic pointer that allows playbooks to reference
     and act upon various types of security events.
     """
@@ -73,14 +73,14 @@ class EventRef(BaseModel):
                     "confidence": 0.95,
                     "source": "abuse.ch",
                 },
-            }
+            },
         }
 
 
 class Condition(BaseModel):
     """
     A condition that must be met for a playbook to trigger.
-    
+
     Supports simple field comparisons and logical operators.
     """
 
@@ -92,20 +92,20 @@ class Condition(BaseModel):
     def evaluate(self, event: EventRef) -> bool:
         """
         Evaluate this condition against an event.
-        
+
         Args:
             event: The event to evaluate
-            
+
         Returns:
             True if condition matches, False otherwise
         """
         # TODO: Implement full field path resolution (e.g., "fields.confidence")
         # For now, basic implementation
         field_value = self._get_field_value(event, self.field)
-        
+
         if field_value is None:
             return self.negate  # If field doesn't exist, return negate value
-        
+
         result = self._compare(field_value, self.operator, self.value)
         return not result if self.negate else result
 
@@ -113,34 +113,34 @@ class Condition(BaseModel):
         """Extract field value from event using dot notation."""
         parts = field_path.split(".")
         current = event.dict()
-        
+
         for part in parts:
             if isinstance(current, dict) and part in current:
                 current = current[part]
             else:
                 return None
-        
+
         return current
 
     def _compare(self, field_value: Any, operator: ConditionOperator, target_value: Any) -> bool:
         """Compare field value with target using operator."""
         if operator == ConditionOperator.EQUALS:
-            return field_value == target_value
+            return bool(field_value == target_value)
         elif operator == ConditionOperator.NOT_EQUALS:
-            return field_value != target_value
+            return bool(field_value != target_value)
         elif operator == ConditionOperator.GREATER_THAN:
-            return field_value > target_value
+            return bool(field_value > target_value)
         elif operator == ConditionOperator.GREATER_THAN_OR_EQUAL:
-            return field_value >= target_value
+            return bool(field_value >= target_value)
         elif operator == ConditionOperator.LESS_THAN:
-            return field_value < target_value
+            return bool(field_value < target_value)
         elif operator == ConditionOperator.LESS_THAN_OR_EQUAL:
-            return field_value <= target_value
+            return bool(field_value <= target_value)
         elif operator == ConditionOperator.CONTAINS:
-            return target_value in str(field_value)
+            return bool(target_value in str(field_value))
         elif operator == ConditionOperator.IN:
-            return field_value in target_value
-        
+            return bool(field_value in target_value)
+
         return False
 
 
@@ -159,14 +159,14 @@ class Action(BaseModel):
                 "action_type": "BLOCK_DOMAIN",
                 "parameters": {"domain": "{{fields.ioc_value}}", "reason": "Intel match"},
                 "description": "Block malicious domain via Pi-hole",
-            }
+            },
         }
 
 
 class Playbook(BaseModel):
     """
     A playbook defines automated responses to security events.
-    
+
     When conditions are met, the playbook executes its defined actions.
     """
 
@@ -214,7 +214,7 @@ class Playbook(BaseModel):
                     },
                 ],
                 "dry_run": True,
-            }
+            },
         }
 
 
@@ -249,5 +249,5 @@ class TriggeredAction(BaseModel):
                 },
                 "executed": False,
                 "success": None,
-            }
+            },
         }

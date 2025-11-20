@@ -18,25 +18,25 @@ class HealthMetrics(BaseModel):
     unknown_devices: int = 0
     untagged_devices: int = 0
     high_risk_devices: int = 0
-    
+
     # Security event metrics
     high_severity_anomalies_24h: int = 0
     intel_matches_24h: int = 0
     intel_matches_7d: int = 0
     suricata_alerts_24h: int = 0
-    
+
     # Change metrics
     new_devices_7d: int = 0
     high_risk_changes_24h: int = 0
-    
+
     # Manual hygiene flags
     backups_ok: bool = False
     updates_current: bool = False
     firewall_enabled: bool = True
-    
+
     # SOAR metrics
     unresolved_incidents: int = 0
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -54,7 +54,7 @@ class HealthMetrics(BaseModel):
                 "updates_current": True,
                 "firewall_enabled": True,
                 "unresolved_incidents": 0,
-            }
+            },
         }
 
 
@@ -65,22 +65,22 @@ class HealthScore(BaseModel):
 
     score: int = Field(..., ge=0, le=100, description="Overall health score 0-100")
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    
+
     # Component scores (each 0-100)
     inventory_score: float = 0.0
     threat_score: float = 0.0
     change_score: float = 0.0
     hygiene_score: float = 0.0
-    
+
     # Metrics used
     metrics: HealthMetrics
-    
+
     # Recommendations
     recommendations: list[str] = Field(default_factory=list)
-    
+
     # Grade
     grade: str = "F"  # A, B, C, D, F
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -96,5 +96,5 @@ class HealthScore(BaseModel):
                     "Investigate 2 high-severity anomalies",
                 ],
                 "grade": "B",
-            }
+            },
         }

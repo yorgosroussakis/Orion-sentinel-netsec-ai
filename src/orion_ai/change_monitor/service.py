@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+from typing import List, Optional
 
 from .analyzer import ChangeAnalyzer
 from .baseline import BaselineBuilder
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ChangeMonitorService:
     """
     Service for continuous change detection.
-    
+
     Periodically:
     1. Build new baseline
     2. Compare with previous baseline
@@ -39,7 +40,7 @@ class ChangeMonitorService:
     ):
         """
         Initialize change monitor service.
-        
+
         Args:
             builder: Baseline builder
             analyzer: Change analyzer
@@ -53,49 +54,49 @@ class ChangeMonitorService:
         self.baseline_interval_hours = baseline_interval_hours
         self.baseline_period_days = baseline_period_days
         self.running = False
-        self.previous_baseline_id = None
+        self.previous_baseline_id: Optional[str] = None
 
     async def run_once(self) -> int:
         """
         Run one iteration of change detection.
-        
+
         Returns:
             Number of changes detected
         """
         try:
             logger.info("Building new baseline...")
-            
+
             # Build current baseline
             current_baseline = self.builder.build_global_baseline(
-                period_days=self.baseline_period_days
+                period_days=self.baseline_period_days,
             )
-            
+
             # Save it
             self.builder.save_baseline(current_baseline)
-            
-            changes = []
-            
+
+            changes: List[ChangeEvent] = []
+
             # Compare with previous if available
             if self.previous_baseline_id:
                 logger.info(f"Loading previous baseline: {self.previous_baseline_id}")
                 previous_baseline = self.builder.load_baseline(self.previous_baseline_id)
-                
+
                 if previous_baseline:
                     logger.info("Analyzing changes...")
                     changes = self.analyzer.compare_baselines(
-                        previous_baseline, current_baseline
+                        previous_baseline, current_baseline,
                     )
-                    
+
                     # Emit change events
                     for change in changes:
                         await self._emit_change_event(change)
-            
+
             # Update previous baseline ID
             self.previous_baseline_id = current_baseline.snapshot_id
-            
+
             logger.info(f"Change detection complete: {len(changes)} changes detected")
             return len(changes)
-            
+
         except Exception as e:
             logger.error(f"Error in change detection: {e}", exc_info=True)
             return 0
@@ -103,17 +104,17 @@ class ChangeMonitorService:
     async def _emit_change_event(self, change: ChangeEvent) -> None:
         """
         Emit change event to Loki.
-        
+
         Args:
             change: Change event to emit
         """
         # TODO: Push to Loki
         # POST to {loki_url}/loki/api/v1/push
         # Labels: service=change_monitor, stream=change_event, change_type={change.change_type}
-        
+
         logger.info(
             f"Change detected: {change.change_type} for {change.entity} "
-            f"(risk: {change.risk_level})"
+            f"(risk: {change.risk_level})",
         )
         logger.debug(f"Change details: {change.dict()}")
 
@@ -123,16 +124,16 @@ class ChangeMonitorService:
         logger.info(
             f"Starting change monitor service "
             f"(baseline interval: {self.baseline_interval_hours}h, "
-            f"baseline period: {self.baseline_period_days}d)"
+            f"baseline period: {self.baseline_period_days}d)",
         )
-        
+
         iteration = 0
         while self.running:
             iteration += 1
             logger.debug(f"Change monitor iteration {iteration}")
-            
+
             changes_detected = await self.run_once()
-            
+
             # Sleep until next iteration
             sleep_seconds = self.baseline_interval_hours * 3600
             logger.info(f"Sleeping for {self.baseline_interval_hours}h...")
@@ -149,7 +150,7 @@ def main() -> None:
     loki_url = os.getenv("LOKI_URL", "http://localhost:3100")
     baseline_interval_hours = int(os.getenv("CHANGE_MONITOR_INTERVAL_HOURS", "24"))
     baseline_period_days = int(os.getenv("CHANGE_MONITOR_PERIOD_DAYS", "7"))
-    
+
     logger.info("=" * 60)
     logger.info("Orion Sentinel - Change Monitor Service")
     logger.info("=" * 60)
@@ -157,10 +158,10 @@ def main() -> None:
     logger.info(f"Baseline Interval: {baseline_interval_hours}h")
     logger.info(f"Baseline Period: {baseline_period_days}d")
     logger.info("=" * 60)
-    
+
     builder = BaselineBuilder()
     analyzer = ChangeAnalyzer()
-    
+
     service = ChangeMonitorService(
         builder=builder,
         analyzer=analyzer,
@@ -168,7 +169,7 @@ def main() -> None:
         baseline_interval_hours=baseline_interval_hours,
         baseline_period_days=baseline_period_days,
     )
-    
+
     try:
         asyncio.run(service.run())
     except KeyboardInterrupt:
