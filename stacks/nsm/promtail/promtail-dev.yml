@@ -1,0 +1,80 @@
+# Promtail configuration for development mode
+# Reads sample log files and ships them to Loki
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions-dev.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Sample Suricata EVE logs
+  - job_name: suricata-dev
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: suricata
+          environment: dev
+          __path__: /samples/suricata-eve.json
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            event_type: event_type
+            src_ip: src_ip
+            dest_ip: dest_ip
+      - labels:
+          event_type:
+          src_ip:
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+
+  # Sample DNS logs
+  - job_name: dns-dev
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: dns
+          environment: dev
+          __path__: /samples/dns.log
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<timestamp>\S+ \S+) \| (?P<client_ip>\S+) \| (?P<query>\S+) \| (?P<type>\S+) \| (?P<response>\S+)'
+      - labels:
+          client_ip:
+          query:
+      - timestamp:
+          source: timestamp
+          format: '2006-01-02 15:04:05'
+
+  # Sample threat intelligence events
+  - job_name: intel-dev
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: threat_intel
+          environment: dev
+          __path__: /samples/intel-events.json
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            event_type: event_type
+            severity: severity
+            ioc_type: ioc_type
+            ioc_value: ioc_value
+      - labels:
+          event_type:
+          severity:
+          ioc_type:
+      - timestamp:
+          source: timestamp
+          format: RFC3339

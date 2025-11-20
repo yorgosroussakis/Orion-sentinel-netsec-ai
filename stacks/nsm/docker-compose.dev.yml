@@ -1,0 +1,73 @@
+# Orion Sentinel NSM Stack - Development Mode
+# Uses sample logs instead of live traffic for development and testing
+
+version: '3.8'
+
+services:
+  # Loki - Log aggregation and storage
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: orion-loki-dev
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data-dev:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Log Injector - Replays sample logs to Loki
+  log-injector:
+    image: grafana/promtail:2.9.3
+    container_name: orion-log-injector
+    volumes:
+      - ./promtail/promtail-dev.yml:/etc/promtail/config.yml:ro
+      - ../../samples:/samples:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: orion-grafana-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - grafana-data-dev:/var/lib/grafana
+    depends_on:
+      - loki
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  loki-data-dev:
+    driver: local
+  grafana-data-dev:
+    driver: local
+
+networks:
+  default:
+    name: orion-nsm-dev-network
