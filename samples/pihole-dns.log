@@ -1,0 +1,34 @@
+# Sample Pi-hole DNS query log
+# Format: timestamp client query_type domain response_type response
+# This is a simplified representation for testing purposes
+
+2025-01-20 14:30:15 192.168.1.100 A google.com NODATA -
+2025-01-20 14:30:16 192.168.1.100 AAAA google.com IP 2607:f8b0:4004:c07::64
+2025-01-20 14:30:22 192.168.1.55 A facebook.com IP 157.240.1.35
+2025-01-20 14:30:45 192.168.1.75 A ads.doubleclick.net BLOCKED 0.0.0.0
+2025-01-20 14:31:02 192.168.1.120 A github.com IP 140.82.114.4
+2025-01-20 14:31:15 192.168.1.150 A malicious-phishing-site.example BLOCKED 0.0.0.0
+2025-01-20 14:31:30 192.168.1.200 A api.ipify.org IP 54.204.14.42
+2025-01-20 14:32:00 192.168.1.100 A cdn.example.com IP 93.184.216.34
+2025-01-20 14:32:15 192.168.1.55 A tracking.example.org BLOCKED 0.0.0.0
+2025-01-20 14:32:30 192.168.1.75 A secure.banking.example IP 198.51.100.10
+2025-01-20 14:33:05 192.168.1.100 A malicious-domain.example IP 203.0.113.50
+2025-01-20 14:33:20 192.168.1.180 A netflix.com IP 52.84.220.90
+2025-01-20 14:33:45 192.168.1.120 A apt.ubuntu.com IP 91.189.91.38
+2025-01-20 14:34:00 192.168.1.200 A c2-server-dga.xyz BLOCKED 0.0.0.0
+2025-01-20 14:34:15 192.168.1.55 A update.microsoft.com IP 23.38.15.151
+2025-01-20 14:34:30 192.168.1.150 PTR 1.168.192.in-addr.arpa IP pi-hole.local
+2025-01-20 14:35:00 192.168.1.100 A randomdgadomain123456.info BLOCKED 0.0.0.0
+2025-01-20 14:35:15 192.168.1.75 A twitter.com IP 104.244.42.129
+2025-01-20 14:35:30 192.168.1.120 A reddit.com IP 151.101.1.140
+2025-01-20 14:36:00 192.168.1.180 A suspicious-tracker.net BLOCKED 0.0.0.0
+2025-01-20 14:36:15 192.168.1.55 A cloudflare.com IP 104.16.132.229
+2025-01-20 14:36:30 192.168.1.200 A githubusercontent.com IP 185.199.108.133
+2025-01-20 14:37:00 192.168.1.100 A yahoo.com IP 98.137.11.164
+2025-01-20 14:37:15 192.168.1.150 A known-malware-c2.example BLOCKED 0.0.0.0
+2025-01-20 14:37:30 192.168.1.75 A wikipedia.org IP 91.198.174.192
+2025-01-20 14:38:00 192.168.1.120 A pypi.org IP 151.101.0.223
+2025-01-20 14:38:15 192.168.1.55 A stackoverflow.com IP 151.101.1.69
+2025-01-20 14:38:30 192.168.1.180 A cryptomining-domain.xyz BLOCKED 0.0.0.0
+2025-01-20 14:39:00 192.168.1.200 A archive.org IP 207.241.224.2
+2025-01-20 14:39:15 192.168.1.100 A docker.io IP 44.192.91.94
