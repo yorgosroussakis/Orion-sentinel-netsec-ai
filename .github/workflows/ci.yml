@@ -9,11 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    env:
+      PYTHONPATH: src
     strategy:
       matrix:
         python-version: ['3.9', '3.10', '3.11']
-    
     steps:
     - uses: actions/checkout@v3
     
@@ -32,9 +32,16 @@ jobs:
     
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        python -m pip install --upgrade pip setuptools wheel
+        # Install the project in editable mode so tests can import the package
+        pip install -e .
+        # Install requirements if present (do not fail if absent)
+        pip install -r requirements.txt || true
+        pip install -r requirements-dev.txt || true
+        # Install type stubs for PyYAML to satisfy mypy
+        python -m pip install types-PyYAML || true
+        # Ensure pytest and test helpers are available
+        python -m pip install pytest pytest-asyncio pytest-cov || true
     
     - name: Lint with ruff
       run: |
