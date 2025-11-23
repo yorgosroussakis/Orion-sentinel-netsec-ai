@@ -13,7 +13,7 @@ Orion Sentinel NetSec supports two explicit deployment modes. Choose the one tha
 | **Purpose** | Production sensor feeding CoreSrv | Development/testing/offline operation |
 | **LOCAL_OBSERVABILITY** | `false` | `true` |
 | **LOKI_URL** | `http://<CoreSrv-IP>:3100` | `http://loki:3100` |
-| **Docker Compose files** | `stacks/nsm/docker-compose.yml` only | `stacks/nsm/docker-compose.yml` + `docker-compose.local-observability.yml` |
+| **Docker Compose files** | `stacks/nsm/docker-compose.yml` only | `stacks/nsm/docker-compose.yml` + `stacks/nsm/docker-compose.local-observability.yml` |
 | **Startup command** | `./scripts/netsecctl.sh up-spog` | `./scripts/netsecctl.sh up-standalone` |
 | **Local Loki/Grafana** | No (uses CoreSrv) | Yes (runs locally) |
 | **When to use** | Normal operation with CoreSrv | Dev/testing/no CoreSrv available |
