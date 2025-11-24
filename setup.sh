@@ -15,6 +15,9 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# Paths
+NETSECCTL_SCRIPT="./scripts/netsecctl.sh"
+
 # Print colored message
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -260,7 +263,7 @@ setup_python_dev() {
     python3 -m venv venv
     
     print_info "Installing dependencies..."
-    source venv/bin/activate
+    . venv/bin/activate
     pip install --upgrade pip
     pip install -e .
     pip install -r requirements-dev.txt
@@ -285,7 +288,7 @@ show_next_steps() {
         echo "     curl ${LOKI_URL_VALUE}/ready"
         echo ""
         echo "  2. Start services:"
-        echo "     ./scripts/netsecctl.sh up-spog"
+        echo "     $NETSECCTL_SCRIPT up-spog"
         echo ""
         echo "  3. Verify log shipping:"
         echo "     docker logs orion-promtail | grep POST"
@@ -301,7 +304,7 @@ show_next_steps() {
         echo "Next steps for Standalone mode:"
         echo ""
         echo "  1. Start services:"
-        echo "     ./scripts/netsecctl.sh up-standalone"
+        echo "     $NETSECCTL_SCRIPT up-standalone"
         echo ""
         echo "  2. Access services:"
         echo "     - Grafana: http://localhost:3000 (admin/admin)"
@@ -309,15 +312,15 @@ show_next_steps() {
         echo "     - Loki API: http://localhost:3100"
         echo ""
         echo "  3. Verify services:"
-        echo "     ./scripts/netsecctl.sh status"
+        echo "     $NETSECCTL_SCRIPT status"
         echo ""
     fi
     
     echo "Common operations:"
-    echo "  - View logs: ./scripts/netsecctl.sh logs"
-    echo "  - Check status: ./scripts/netsecctl.sh status"
-    echo "  - Stop services: ./scripts/netsecctl.sh down"
-    echo "  - Get help: ./scripts/netsecctl.sh help"
+    echo "  - View logs: $NETSECCTL_SCRIPT logs"
+    echo "  - Check status: $NETSECCTL_SCRIPT status"
+    echo "  - Stop services: $NETSECCTL_SCRIPT down"
+    echo "  - Get help: $NETSECCTL_SCRIPT help"
     echo ""
     echo "Documentation:"
     echo "  - Quick Start: QUICKSTART.md"

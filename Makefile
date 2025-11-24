@@ -6,6 +6,9 @@
 # Default target
 .DEFAULT_GOAL := help
 
+# Variables
+NETSECCTL := ./scripts/netsecctl.sh
+
 help: ## Show this help message
 	@echo "Orion Sentinel NetSec Node - Available Commands"
 	@echo ""
@@ -24,23 +27,23 @@ setup: ## Run interactive setup script
 install: setup ## Alias for setup
 
 start-spog: ## Start services in SPoG mode (production)
-	@./scripts/netsecctl.sh up-spog
+	@$(NETSECCTL) up-spog
 
 start-standalone: ## Start services in Standalone mode (development/lab)
-	@./scripts/netsecctl.sh up-standalone
+	@$(NETSECCTL) up-standalone
 
 start: start-spog ## Alias for start-spog (default start mode)
 
 stop: ## Stop all services
-	@./scripts/netsecctl.sh down
+	@$(NETSECCTL) down
 
 down: stop ## Alias for stop
 
 status: ## Show status of all services
-	@./scripts/netsecctl.sh status
+	@$(NETSECCTL) status
 
 logs: ## Tail logs from all services
-	@./scripts/netsecctl.sh logs
+	@$(NETSECCTL) logs
 
 restart-spog: stop start-spog ## Restart services in SPoG mode
 
