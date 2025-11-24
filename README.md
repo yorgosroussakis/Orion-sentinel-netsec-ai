@@ -4,6 +4,17 @@
 
 Orion Sentinel NetSec is a network security sensor and AI-powered threat detection engine designed for home labs and small networks. This repository contains the **NetSec node** component that runs on a Raspberry Pi 5 or mini-PC.
 
+## 🚀 Quick Install
+
+```bash
+git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+cd Orion-sentinel-netsec-ai
+./setup.sh  # Interactive setup - guides you through everything
+make start-spog  # Start in production mode (or make start-standalone for dev)
+```
+
+See [Quick Start](#quick-start) section below for detailed instructions.
+
 ## 🏗️ Architecture: Single Pane of Glass (SPoG)
 
 The Orion Sentinel platform consists of two main components:
