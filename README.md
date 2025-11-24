@@ -7,7 +7,7 @@ Orion Sentinel NetSec is a network security sensor and AI-powered threat detecti
 ## 🚀 Quick Install
 
 ```bash
-git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 ./setup.sh  # Interactive setup - guides you through everything
 make start-spog  # Start in production mode (or make start-standalone for dev)
@@ -256,7 +256,7 @@ The easiest way to get started:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 
 # 2. Run interactive setup
@@ -288,7 +288,7 @@ Deploy NetSec as a sensor that reports to CoreSrv:
 
 1. **Clone repository**:
    ```bash
-   git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+   git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
    cd Orion-sentinel-netsec-ai
    ```
 

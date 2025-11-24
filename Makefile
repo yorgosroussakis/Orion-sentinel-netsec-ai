@@ -102,9 +102,7 @@ clean: ## Clean up generated files and containers
 clean-all: clean ## Deep clean including venv and Docker volumes
 	@echo "Performing deep clean..."
 	@rm -rf venv
-	@docker volume ls -q | grep "^orion-sentinel-" | xargs -r docker volume rm || true
-	@docker volume ls -q | grep "^orion-soar" | xargs -r docker volume rm || true
-	@docker volume ls -q | grep "^orion-inventory" | xargs -r docker volume rm || true
+	@docker volume ls -q | grep -E '^(orion-sentinel-|orion-soar|orion-inventory)' | xargs -r docker volume rm || true
 	@echo "✅ Deep clean complete"
 
 env-check: ## Validate .env file exists and is configured

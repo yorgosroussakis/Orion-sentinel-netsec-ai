@@ -6,7 +6,7 @@ This is a condensed version of the setup instructions for Orion Sentinel NetSec 
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 
 # 2. Run interactive setup (guides you through configuration)
@@ -71,7 +71,7 @@ NetSec node as a sensor reporting to CoreSrv for centralized observability.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 
 # 2. Configure environment
@@ -115,7 +115,7 @@ NetSec node with local Loki + Grafana for development and testing.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/yorgosroussakis/Orion-sentinel-netsec-ai.git
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 
 # 2. Configure environment
