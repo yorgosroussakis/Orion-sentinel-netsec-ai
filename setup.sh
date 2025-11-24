@@ -178,9 +178,9 @@ configure_spog_mode() {
         loki_url="http://192.168.8.50:3100"
     fi
     
-    # Update .env file
-    sed -i "s|LOKI_URL=.*|LOKI_URL=$loki_url|g" .env
-    sed -i "s|LOCAL_OBSERVABILITY=.*|LOCAL_OBSERVABILITY=false|g" .env
+    # Update .env file - using # as delimiter to avoid issues with special chars
+    sed -i "s#LOKI_URL=.*#LOKI_URL=$loki_url#g" .env
+    sed -i "s#LOCAL_OBSERVABILITY=.*#LOCAL_OBSERVABILITY=false#g" .env
     
     print_success "Configured for SPoG mode with Loki at: $loki_url"
 }
@@ -189,9 +189,9 @@ configure_spog_mode() {
 configure_standalone_mode() {
     print_info "Configuring Standalone mode settings..."
     
-    # Update .env file
-    sed -i "s|LOKI_URL=.*|LOKI_URL=http://loki:3100|g" .env
-    sed -i "s|LOCAL_OBSERVABILITY=.*|LOCAL_OBSERVABILITY=true|g" .env
+    # Update .env file - using # as delimiter to avoid issues with special chars
+    sed -i "s#LOKI_URL=.*#LOKI_URL=http://loki:3100#g" .env
+    sed -i "s#LOCAL_OBSERVABILITY=.*#LOCAL_OBSERVABILITY=true#g" .env
     
     print_success "Configured for Standalone mode with local Loki"
 }
@@ -211,7 +211,7 @@ configure_common_settings() {
     
     # Add NSM_IFACE to .env if not present
     if grep -q "^NSM_IFACE=" .env; then
-        sed -i "s|NSM_IFACE=.*|NSM_IFACE=$nsm_iface|g" .env
+        sed -i "s#NSM_IFACE=.*#NSM_IFACE=$nsm_iface#g" .env
     else
         echo "" >> .env
         echo "# Network Interface for Suricata" >> .env
@@ -224,10 +224,10 @@ configure_common_settings() {
     echo ""
     read -p "Enable SOAR dry-run mode? (recommended for first installation) (Y/n): " soar_dry_run
     if [[ ! $soar_dry_run =~ ^[Nn]$ ]]; then
-        sed -i "s|SOAR_DRY_RUN=.*|SOAR_DRY_RUN=1|g" .env
+        sed -i "s#SOAR_DRY_RUN=.*#SOAR_DRY_RUN=1#g" .env
         print_success "SOAR dry-run mode enabled (safe mode)"
     else
-        sed -i "s|SOAR_DRY_RUN=.*|SOAR_DRY_RUN=0|g" .env
+        sed -i "s#SOAR_DRY_RUN=.*#SOAR_DRY_RUN=0#g" .env
         print_warning "SOAR dry-run mode disabled (actions will be executed)"
     fi
     

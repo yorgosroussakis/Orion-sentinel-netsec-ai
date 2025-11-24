@@ -51,7 +51,11 @@ dev-install: ## Set up Python development environment
 	@python3 -m venv venv
 	@. venv/bin/activate && pip install --upgrade pip
 	@. venv/bin/activate && pip install -e .
-	@. venv/bin/activate && pip install -r requirements-dev.txt
+	@if [ -f requirements-dev.txt ]; then \
+		. venv/bin/activate && pip install -r requirements-dev.txt; \
+	else \
+		echo "⚠️  requirements-dev.txt not found, skipping dev dependencies"; \
+	fi
 	@echo "✅ Development environment ready!"
 	@echo "Activate with: source venv/bin/activate"
 
@@ -105,9 +109,9 @@ env-check: ## Validate .env file exists and is configured
 	fi
 	@echo "✅ .env file exists"
 	@if [ -f .env.example ]; then \
-		PLACEHOLDER=$$(grep "^LOKI_URL=" .env.example | cut -d= -f2); \
-		CURRENT=$$(grep "^LOKI_URL=" .env | cut -d= -f2); \
-		if [ "$$PLACEHOLDER" = "$$CURRENT" ]; then \
+		PLACEHOLDER=$$(grep "^LOKI_URL=" .env.example 2>/dev/null | cut -d= -f2 || echo ""); \
+		CURRENT=$$(grep "^LOKI_URL=" .env 2>/dev/null | cut -d= -f2 || echo ""); \
+		if [ -n "$$PLACEHOLDER" ] && [ "$$PLACEHOLDER" = "$$CURRENT" ]; then \
 			echo "⚠️  Warning: LOKI_URL still has default value. Update it in .env"; \
 		fi; \
 	fi
