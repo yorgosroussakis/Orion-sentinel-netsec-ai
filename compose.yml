@@ -1,0 +1,260 @@
+# Orion Sentinel NetSec Node - Main Compose File
+# Production-ready network security monitoring for Raspberry Pi 5
+#
+# This compose file unifies all services with profile-based deployment:
+#
+# Profiles:
+#   - netsec-core: Suricata IDS + Promtail + Node Exporter
+#   - ai: AI detection services (SOAR, Inventory, Health Score, etc.)
+#   - exporters: Additional metrics exporters
+#
+# Usage Examples:
+#   docker compose --profile netsec-core up -d                    # Core NSM only
+#   docker compose --profile netsec-core --profile ai up -d       # Full stack
+#   make up-core                                                  # Use Makefile shortcuts
+#   make up-all
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # PROFILE: netsec-core
+  # Network Security Monitoring - Core Layer
+  # ============================================================================
+
+  # Suricata IDS - Passive network monitoring on mirrored traffic
+  suricata:
+    image: jasonish/suricata:latest
+    container_name: orion-suricata
+    profiles: ["netsec-core"]
+    network_mode: host  # Required for packet capture on physical interface
+    cap_add:
+      - NET_ADMIN   # Required for AF_PACKET capture
+      - NET_RAW     # Required for raw socket access
+      - SYS_NICE    # Optional: for thread priority tuning
+    cap_drop:
+      - ALL
+    environment:
+      - SURICATA_OPTIONS=--af-packet=${MONITOR_IF:-eth0}
+    volumes:
+      - ./stacks/nsm/suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
+      - suricata-logs:/var/log/suricata
+      - suricata-rules:/var/lib/suricata
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Promtail - Ships logs from Suricata to Loki (CoreSrv or local)
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: orion-promtail
+    profiles: ["netsec-core"]
+    environment:
+      - LOKI_URL=${LOKI_URL:-http://loki:3100}
+    volumes:
+      - ./stacks/nsm/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - suricata-logs:/var/log/suricata:ro
+      - /var/log:/host/logs:ro  # Optional: ship host system logs
+    command: -config.file=/etc/promtail/config.yml -config.expand-env=true
+    restart: unless-stopped
+    networks:
+      - orion-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Node Exporter - System metrics (CPU, RAM, disk, network)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: orion-node-exporter
+    profiles: ["netsec-core", "exporters"]
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    networks:
+      - orion-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ============================================================================
+  # PROFILE: ai
+  # AI Detection & Response Layer
+  # ============================================================================
+
+  # SOAR Service - Security Orchestration & Automated Response
+  soar:
+    build:
+      context: .
+      dockerfile: stacks/ai/Dockerfile
+    image: orion-ai:latest
+    container_name: orion-soar
+    profiles: ["ai"]
+    command: python -m orion_ai.soar.service
+    environment:
+      - LOKI_URL=${LOKI_URL}
+      - SOAR_DRY_RUN=${SOAR_DRY_RUN:-1}
+      - SOAR_POLL_INTERVAL=${SOAR_POLL_INTERVAL:-60}
+      - SOAR_PLAYBOOKS_FILE=/config/playbooks.yml
+      - SOAR_ALLOW_EMPTY_PLAYBOOKS=${SOAR_ALLOW_EMPTY_PLAYBOOKS:-0}
+      - PIHOLE_URL=${PIHOLE_URL}
+      - PIHOLE_API_KEY=${PIHOLE_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Notification settings
+      - NOTIFY_SMTP_HOST=${NOTIFY_SMTP_HOST}
+      - NOTIFY_SMTP_PORT=${NOTIFY_SMTP_PORT}
+      - NOTIFY_SMTP_USER=${NOTIFY_SMTP_USER}
+      - NOTIFY_SMTP_PASS=${NOTIFY_SMTP_PASS}
+      - NOTIFY_EMAIL_FROM=${NOTIFY_EMAIL_FROM}
+      - NOTIFY_EMAIL_TO=${NOTIFY_EMAIL_TO}
+      - NOTIFY_SIGNAL_ENABLED=${NOTIFY_SIGNAL_ENABLED:-false}
+      - NOTIFY_TELEGRAM_ENABLED=${NOTIFY_TELEGRAM_ENABLED:-false}
+    volumes:
+      - ./config:/config:ro
+      - soar-data:/data
+    restart: unless-stopped
+    networks:
+      - orion-network
+
+  # Device Inventory Service - Track and fingerprint network devices
+  inventory:
+    image: orion-ai:latest
+    container_name: orion-inventory
+    profiles: ["ai"]
+    command: python -m orion_ai.inventory.service
+    environment:
+      - LOKI_URL=${LOKI_URL}
+      - INVENTORY_POLL_INTERVAL=${INVENTORY_POLL_INTERVAL:-300}
+      - INVENTORY_DB_PATH=/data/inventory.db
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Threat Intel settings
+      - IOC_STORE_PATH=/data/threat_intel.db
+      - TI_ENABLE_OTX=${TI_ENABLE_OTX:-false}
+      - TI_OTX_API_KEY=${TI_OTX_API_KEY}
+      - TI_ENABLE_URLHAUS=${TI_ENABLE_URLHAUS:-true}
+      - TI_ENABLE_FEODO=${TI_ENABLE_FEODO:-true}
+      - TI_ENABLE_PHISHTANK=${TI_ENABLE_PHISHTANK:-true}
+    volumes:
+      - inventory-data:/data
+    restart: unless-stopped
+    networks:
+      - orion-network
+
+  # Change Monitor Service - Baseline and anomaly detection
+  change-monitor:
+    image: orion-ai:latest
+    container_name: orion-change-monitor
+    profiles: ["ai"]
+    command: python -m orion_ai.change_monitor.service
+    environment:
+      - LOKI_URL=${LOKI_URL}
+      - CHANGE_MONITOR_INTERVAL_HOURS=${CHANGE_MONITOR_INTERVAL_HOURS:-24}
+      - CHANGE_MONITOR_PERIOD_DAYS=${CHANGE_MONITOR_PERIOD_DAYS:-7}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - change-data:/data
+    restart: unless-stopped
+    networks:
+      - orion-network
+
+  # Health Score Service - Security posture scoring
+  health-score:
+    image: orion-ai:latest
+    container_name: orion-health-score
+    profiles: ["ai"]
+    command: python -m orion_ai.health_score.service
+    environment:
+      - LOKI_URL=${LOKI_URL}
+      - HEALTH_SCORE_INTERVAL_HOURS=${HEALTH_SCORE_INTERVAL_HOURS:-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - health-data:/data
+    restart: unless-stopped
+    networks:
+      - orion-network
+
+  # API Server / Web UI - Dashboard and control interface
+  # In SPoG mode, exposed via CoreSrv Traefik at https://security.local
+  # In standalone mode, accessible at http://localhost:8000
+  api:
+    image: orion-ai:latest
+    container_name: orion-api
+    profiles: ["ai"]
+    command: python -m orion_ai.ui.http_server
+    environment:
+      - API_HOST=${API_HOST:-0.0.0.0}
+      - API_PORT=${API_PORT:-8000}
+      - API_RELOAD=${API_RELOAD:-false}
+      - LOKI_URL=${LOKI_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - inventory-data:/data:ro
+    restart: unless-stopped
+    depends_on:
+      - inventory
+    networks:
+      - orion-network
+
+  # ============================================================================
+  # PROFILE: exporters (Optional - Additional Observability)
+  # ============================================================================
+
+  # Process Exporter - Per-process metrics (optional, CPU intensive)
+  # Disabled by default - only start if needed for troubleshooting
+  # process-exporter:
+  #   image: ncabatoff/process-exporter:latest
+  #   container_name: orion-process-exporter
+  #   profiles: ["exporters"]
+  #   privileged: true
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #   command:
+  #     - '--procfs=/host/proc'
+  #     - '--children=true'
+  #   ports:
+  #     - "9256:9256"
+  #   restart: unless-stopped
+  #   networks:
+  #     - orion-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  # NSM volumes
+  suricata-logs:
+    driver: local
+  suricata-rules:
+    driver: local
+  
+  # AI service volumes
+  soar-data:
+    driver: local
+  inventory-data:
+    driver: local
+  change-data:
+    driver: local
+  health-data:
+    driver: local
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  orion-network:
+    driver: bridge
+    name: orion-network
