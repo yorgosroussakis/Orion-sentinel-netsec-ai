@@ -15,9 +15,84 @@ make start-spog  # Start in production mode (or make start-standalone for dev)
 
 See [Quick Start](#quick-start) section below for detailed instructions.
 
-## 🏗️ Architecture: Single Pane of Glass (SPoG)
+## 🏗️ Architecture
 
-The Orion Sentinel platform consists of two main components:
+### Deployment Modes
+
+Orion Sentinel supports two deployment modes:
+
+#### **SPoG Mode (Single Pane of Glass) - Recommended**
+NetSec Pi acts as a sensor feeding into centralized CoreSrv for observability.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                  CoreSrv (Dell) - SPoG                   │
+│  • Loki (central log aggregation)                        │
+│  • Prometheus (metrics collection)                       │
+│  • Grafana (all dashboards)                              │
+│  • Traefik (reverse proxy for Web UI)                    │
+└────────────────────────▲─────────────────────────────────┘
+                         │ Logs & Metrics
+                         │
+┌────────────────────────┴─────────────────────────────────┐
+│           NetSec Node (Pi 5) - This Repository           │
+│  • Suricata IDS (passive monitoring)                     │
+│  • AI threat detection & correlation                     │
+│  • SOAR automation                                       │
+│  • Promtail (ships logs to CoreSrv)                      │
+│  • Web UI (exposed via CoreSrv Traefik)                  │
+└──────────────────────────────────────────────────────────┘
+         ▲
+         │ Port Mirror / SPAN
+         │
+┌────────┴────────┐
+│  Router/Switch  │
+└─────────────────┘
+```
+
+**Configure**: Set `LOKI_URL=http://<CoreSrv-IP>:3100` in `.env`
+
+---
+
+#### **Standalone Mode - For Development/Testing**
+NetSec Pi runs its own Loki + Grafana for isolated operation.
+
+**Configure**: Set `LOCAL_OBSERVABILITY=true` in `.env`
+
+**Access**: 
+- Grafana: `http://localhost:3000`
+- Web UI: `http://localhost:8000`
+
+---
+
+### Component Architecture
+
+The NetSec Node consists of layered services managed via Docker Compose profiles:
+
+**Profile: netsec-core** (Core NSM)
+- Suricata IDS (packet analysis)
+- Promtail (log shipping)
+- Node Exporter (system metrics)
+
+**Profile: ai** (AI Detection & Response)
+- SOAR service (automated playbooks)
+- Inventory service (device tracking)
+- Change Monitor (anomaly detection)
+- Health Score (security posture)
+- Web API/UI (dashboard)
+
+**Profile: exporters** (Optional Metrics)
+- Additional system metrics exporters
+
+**Start modes**:
+```bash
+make up-core         # Core NSM only
+make up-all          # Core + AI (recommended)
+```
+
+For detailed architecture, see [PLAN.md](PLAN.md).
+
+---
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -243,44 +318,143 @@ Everything flows through Loki and is visible in both Grafana (analytics) and the
 
 ## Quick Start
 
-### Prerequisites
+### Installation
 
-- Raspberry Pi 5 (8GB) or mini-PC with Docker
-- Docker & Docker Compose installed
-- Network switch/router with port mirroring (SPAN) configured
-- CoreSrv running (for SPoG mode) OR standalone lab setup
+#### Method 1: Automated Bootstrap (Recommended)
 
-### 🚀 Streamlined Installation (Recommended)
-
-The easiest way to get started:
+The bootstrap script handles all prerequisites and configuration:
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
 cd Orion-sentinel-netsec-ai
 
-# 2. Run interactive setup
-./setup.sh
-# OR using Make
-make setup
+# 2. Run bootstrap
+./scripts/bootstrap-netsec.sh
 
-# 3. Start services (based on mode you selected)
-make start-spog        # For SPoG mode
-# OR
-make start-standalone  # For Standalone mode
+# The bootstrap script will:
+# ✓ Check Docker and Docker Compose installation
+# ✓ Validate network interface exists
+# ✓ Set kernel parameters if needed
+# ✓ Create .env file from template with guided prompts
+# ✓ Show you next steps
+
+# 3. Start services
+make up-all
 ```
 
-The interactive setup script will:
-- ✅ Check all prerequisites (Docker, Docker Compose)
-- ✅ Guide you through mode selection (SPoG vs Standalone)
-- ✅ Configure environment variables with prompts
-- ✅ Set network interface for Suricata
-- ✅ Optionally set up Python development environment
-- ✅ Display clear next steps
+**What you'll configure**:
+- `MONITOR_IF` - Network interface receiving mirrored traffic (e.g., eth0)
+- `LOKI_URL` - CoreSrv Loki endpoint (SPoG mode) or local Loki
+- `NODE_NAME` - Identifier for this sensor node
 
-### Manual Installation (Alternative)
+---
+
+#### Method 2: Manual Setup
 
 If you prefer manual configuration:
+
+**1. Clone repository**:
+```bash
+git clone https://github.com/orionsentinel/Orion-sentinel-netsec-ai.git
+cd Orion-sentinel-netsec-ai
+```
+
+**2. Create .env file**:
+```bash
+cp .env.example .env
+nano .env
+```
+
+**3. Configure key variables**:
+```bash
+# Network interface for Suricata (required)
+MONITOR_IF=eth0
+
+# CoreSrv Loki URL (for SPoG mode)
+LOKI_URL=http://192.168.8.50:3100
+
+# Or use local Loki (standalone mode)
+# LOKI_URL=http://loki:3100
+# LOCAL_OBSERVABILITY=true
+
+# Node identification
+NODE_NAME=netsec-pi-01
+```
+
+**4. Start services**:
+```bash
+docker compose --profile netsec-core --profile ai up -d
+# or use: make up-all
+```
+
+---
+
+### Validation
+
+After deployment, verify everything is working:
+
+```bash
+# Run automated validation
+make test
+```
+
+**Manual checks**:
+
+1. **Services running**:
+   ```bash
+   make status
+   # All services should show "Up"
+   ```
+
+2. **Suricata capturing traffic**:
+   ```bash
+   docker logs orion-suricata | grep "Capture"
+   # Should show: "Received N packets"
+   ```
+
+3. **Promtail shipping logs**:
+   ```bash
+   docker logs orion-promtail | grep "POST"
+   # Should show: "POST /loki/api/v1/push (200 OK)"
+   ```
+
+4. **Web UI accessible**:
+   ```bash
+   curl http://localhost:8000/api/health
+   # Should return: {"status": "healthy"}
+   ```
+
+5. **Generate test alert**:
+   ```bash
+   # From another device
+   curl http://testmyids.com
+   
+   # Check for alert
+   docker exec orion-suricata tail /var/log/suricata/eve.json | jq 'select(.event_type=="alert")'
+   ```
+
+For comprehensive validation steps, see [docs/validation.md](docs/validation.md).
+
+---
+
+### Network Configuration
+
+**IMPORTANT**: Your network switch must be configured for port mirroring (SPAN).
+
+**Quick Setup**:
+1. Identify uplink port on switch (usually Port 1)
+2. Identify NetSec Pi port (e.g., Port 24)
+3. Configure port mirror: Source = uplink, Destination = Pi port, Direction = Both
+
+**Vendor-specific guides** available in [docs/network-config.md](docs/network-config.md) for:
+- UniFi
+- Cisco Catalyst
+- TP-Link
+- Netgear
+- MikroTik
+
+---
 
 #### SPoG Mode (Production - Recommended)
 
@@ -367,19 +541,51 @@ Run NetSec with local observability for development:
 make help
 
 # Service management
-make start-spog          # Start in SPoG mode
-make start-standalone    # Start in Standalone mode
+make up-core            # Start core NSM services only
+make up-all             # Start all services (core + AI) - RECOMMENDED
 make stop               # Stop all services
+make restart            # Restart all services
 make status             # Check service status
-make logs              # View logs
+make logs               # View logs (live tail)
+
+# Setup & validation
+make bootstrap          # Initial system setup (checks Docker, creates .env)
+make test               # Run validation tests
+make verify-spog        # Verify CoreSrv connectivity (SPoG mode)
+
+# Maintenance
+make update-images      # Pull latest Docker images
+make backup-config      # Backup .env and config files
+make clean              # Clean up containers and temp files
 
 # Development
-make dev-install       # Set up Python development environment
-make test             # Run tests
-make lint             # Run linters
+make dev-install        # Set up Python development environment
+make test-python        # Run Python unit tests
+make lint               # Run linters
 ```
 
-#### Using netsecctl.sh Script
+#### Using Docker Compose Directly
+
+```bash
+# Start services with specific profiles
+docker compose --profile netsec-core up -d                    # Core only
+docker compose --profile netsec-core --profile ai up -d       # Full stack
+docker compose --profile netsec-core --profile exporters up -d # Core + metrics
+
+# Stop services
+docker compose down
+
+# View logs
+docker compose logs -f suricata
+docker compose logs -f --tail=100
+
+# Check status
+docker compose ps
+```
+
+#### Legacy netsecctl.sh Script
+
+The legacy script still works for SPoG/Standalone modes:
 
 ```bash
 # Check service status
@@ -391,9 +597,14 @@ make lint             # Run linters
 # Stop all services
 ./scripts/netsecctl.sh down
 
-# Get help
-./scripts/netsecctl.sh help
+# Start in SPoG mode (legacy)
+./scripts/netsecctl.sh up-spog
+
+# Start in Standalone mode (legacy)
+./scripts/netsecctl.sh up-standalone
 ```
+
+---
 
 ### Development Setup
 
@@ -448,28 +659,41 @@ See [.env.example](.env.example) for complete configuration options.
 
 ## Documentation
 
-### SPoG Integration
-- [CoreSrv Integration](docs/CORESRV-INTEGRATION.md) 🎯 **Integration Guide**
-- [CoreSrv Dashboards](docs/CORESRV-DASHBOARDS.md) 📊 **Dashboard Export**
+### 📘 Getting Started
+- **[PLAN.md](PLAN.md)** - Architecture, profiles, and deployment guide
+- **[QUICKSTART.md](QUICKSTART.md)** - Fast setup guide
+- **[docs/validation.md](docs/validation.md)** - Testing and validation procedures
 
-### Core Features
-- [SOAR Playbooks](docs/soar.md)
-- [Notifications & Alerts](docs/notifications.md) 📢
-- [Threat Intelligence](docs/threat-intel.md) 🛡️
-- [Web Dashboard](docs/web-ui.md) 🌐
-- [Device Inventory](docs/inventory.md)
-- [Change Monitor](docs/change-monitor.md)
-- [Health Score](docs/health-score.md)
+### 🔧 Configuration & Setup
+- **[docs/network-config.md](docs/network-config.md)** - Port mirroring & firewall setup
+- **[docs/ai-accelerator.md](docs/ai-accelerator.md)** - AI Hat installation & config
+- **[.env.example](.env.example)** - Environment variable reference
 
-### Stacks & Setup
-- [NSM Stack](stacks/nsm/README.md) - Suricata + Promtail
-- [AI Stack](stacks/ai/README.md) - AI services
-- [Architecture](docs/architecture.md) - System design
+### 📊 Observability
+- **[grafana_dashboards/](grafana_dashboards/)** - Pre-built Grafana dashboards
+- **[docs/CORESRV-INTEGRATION.md](docs/CORESRV-INTEGRATION.md)** - CoreSrv SPoG setup
+- **[docs/CORESRV-DASHBOARDS.md](docs/CORESRV-DASHBOARDS.md)** - Dashboard export guide
 
-### Additional
-- [Lab Mode](docs/lab-mode.md)
-- [Host Logs (EDR-lite)](docs/host-logs.md)
-- [Honeypot Integration](src/orion_ai/honeypot/design.md)
+### 🚨 Features & Operations
+- **[docs/soar.md](docs/soar.md)** - SOAR playbooks and automation
+- **[docs/notifications.md](docs/notifications.md)** - Alert configuration
+- **[docs/threat-intel.md](docs/threat-intel.md)** - Threat intelligence feeds
+- **[docs/web-ui.md](docs/web-ui.md)** - Web dashboard usage
+- **[docs/inventory.md](docs/inventory.md)** - Device inventory management
+- **[docs/health-score.md](docs/health-score.md)** - Security health scoring
+- **[docs/change-monitor.md](docs/change-monitor.md)** - Change detection
+
+### 🏗️ Architecture & Stacks
+- **[stacks/nsm/README.md](stacks/nsm/README.md)** - NSM stack details
+- **[stacks/ai/README.md](stacks/ai/README.md)** - AI stack details
+- **[docs/architecture.md](docs/architecture.md)** - System design (legacy)
+
+### 🛠️ Advanced Topics
+- **[docs/lab-mode.md](docs/lab-mode.md)** - Safe testing mode
+- **[docs/host-logs.md](docs/host-logs.md)** - EDR-lite integration
+- **[src/orion_ai/honeypot/design.md](src/orion_ai/honeypot/design.md)** - Honeypot integration
+
+---
 
 ## Module Structure
 
