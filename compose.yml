@@ -35,6 +35,8 @@ services:
     cap_drop:
       - ALL
     environment:
+      # IMPORTANT: Set MONITOR_IF in .env to your actual mirrored traffic interface
+      # Default 'eth0' may not work on all systems - verify with 'ip link show'
       - SURICATA_OPTIONS=--af-packet=${MONITOR_IF:-eth0}
     volumes:
       - ./stacks/nsm/suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro

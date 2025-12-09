@@ -148,7 +148,15 @@ check_kernel_params() {
     local need_reboot=0
     
     # Check if we need to increase receive buffer sizes for high traffic
-    local rmem_max=$(sysctl -n net.core.rmem_max)
+    local rmem_max
+    rmem_max=$(sysctl -n net.core.rmem_max 2>/dev/null)
+    
+    # Validate rmem_max is a number
+    if [[ ! "$rmem_max" =~ ^[0-9]+$ ]]; then
+        print_warning "Could not read net.core.rmem_max, skipping kernel parameter check"
+        return 0
+    fi
+    
     if [ "$rmem_max" -lt 16777216 ]; then
         print_info "Increasing network receive buffer size"
         echo "net.core.rmem_max = 16777216" | sudo tee -a /etc/sysctl.conf >/dev/null

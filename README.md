@@ -202,6 +202,9 @@ Orion Sentinel occupies a unique space in the home/small-office security landsca
 - **Risk scoring with context**: Each event gets a score + human-readable explanation
 - **Device anomaly detection**: Behavioral analysis per device
 - **Domain risk scoring**: DGA detection, phishing identification, C2 domain spotting
+- **Hardware acceleration**: Optional support for Raspberry Pi AI Hat (Hailo-8, ~13 TOPS)
+  - CPU fallback available for systems without accelerator
+  - See [docs/ai-accelerator.md](docs/ai-accelerator.md) for setup
 - **Threat intelligence integration**:
   - AlienVault OTX (community threat exchange)
   - abuse.ch URLhaus (malicious URLs)
@@ -629,11 +632,20 @@ All configuration is via environment variables in `.env` file. See [.env.example
 
 ### Key Settings
 
+**Network Interface** (required):
+- `MONITOR_IF` - Interface receiving mirrored traffic (e.g., `eth0`, `enx00e04c68xxxx`)
+
+**Node Identification** (recommended):
+- `NODE_NAME` - Unique identifier for this sensor (e.g., `netsec-pi-01`)
+- `NODE_LOCATION` - Physical location (e.g., `basement`, `home-lab`)
+- `HOSTNAME` - System hostname for proper log labeling
+
 **Loki Connection** (SPoG Integration):
-- `LOKI_URL` - CoreSrv Loki URL (e.g., `http://192.168.8.XXX:3100`)
+- `LOKI_URL` - CoreSrv Loki URL (e.g., `http://192.168.8.50:3100`)
+- `PROMETHEUS_URL` - CoreSrv Prometheus URL (e.g., `http://192.168.8.50:9090`)
 - `LOCAL_OBSERVABILITY` - Enable local Loki+Grafana (`true`/`false`)
 
-**SOAR Automation:**
+**SOAR Automation**:
 - `SOAR_DRY_RUN=1` - Enable dry run mode (recommended initially)
 - `SOAR_POLL_INTERVAL=60` - Event polling interval in seconds
 

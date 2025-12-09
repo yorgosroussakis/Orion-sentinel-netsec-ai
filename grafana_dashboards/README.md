@@ -45,7 +45,12 @@ This directory contains pre-built Grafana dashboards for visualizing NetSec node
 
 1. **Copy dashboards to CoreSrv**:
    ```bash
-   scp *.json user@coresrv:/path/to/grafana/provisioning/dashboards/
+   # Example: Copy to CoreSrv Grafana provisioning directory
+   # Adjust path based on your CoreSrv setup
+   scp *.json user@coresrv:/var/lib/grafana/dashboards/
+   
+   # Or if using Docker volume:
+   # scp *.json user@coresrv:/path/to/docker/volumes/grafana-provisioning/_data/dashboards/
    ```
 
 2. **Ensure provisioning is configured** in CoreSrv's Grafana `grafana.ini`:

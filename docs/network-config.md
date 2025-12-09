@@ -306,10 +306,11 @@ The NetSec Pi needs outbound access to:
    - Protocol: TCP
    - Ports: 80, 443
    - Destinations: 
-     - otx.alienvault.com
-     - urlhaus.abuse.ch
-     - feodotracker.abuse.ch
+     - otx.alienvault.com (AlienVault OTX)
+     - urlhaus.abuse.ch (URLhaus)
+     - feodotracker.abuse.ch (Feodo Tracker)
      - checkip.amazonaws.com (PhishTank)
+   - **Note**: Verify current feed URLs in [docs/threat-intel.md](threat-intel.md) as endpoints may change
 
 4. **DNS**:
    - Protocol: UDP
