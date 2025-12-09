@@ -64,13 +64,15 @@ backup_volume() {
     fi
     
     # Get volume mount point
-    local volume_path=$(docker volume inspect "${volume_name}" --format '{{ .Mountpoint }}')
+    local volume_path
+    volume_path=$(docker volume inspect "${volume_name}" --format '{{ .Mountpoint }}')
     
     # Create tar.gz backup
     local backup_file="${BACKUP_PATH}/${volume_name}.tar.gz"
     
     if tar -czf "${backup_file}" -C "$(dirname "${volume_path}")" "$(basename "${volume_path}")" 2>/dev/null; then
-        local size=$(du -h "${backup_file}" | cut -f1)
+        local size
+        size=$(du -h "${backup_file}" | cut -f1)
         echo -e "${GREEN}  ✓ Backed up${NC} (${size}): ${backup_file}"
     else
         echo -e "${RED}  ✗ Backup failed${NC}"

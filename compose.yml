@@ -242,7 +242,7 @@ volumes:
     driver: local
   suricata-rules:
     driver: local
-  
+
   # AI service volumes
   soar-data:
     driver: local
