@@ -1,53 +1,78 @@
 # Orion Sentinel NetSec Node - Makefile
 # Provides convenient commands for common operations
 
-.PHONY: help setup install start-spog start-standalone start stop down status logs restart-spog restart-standalone dev-install test lint format clean clean-all env-check verify-spog health update-images backup-config docs
+.PHONY: help bootstrap setup install start-spog start-standalone start stop down status logs restart-spog restart-standalone dev-install test lint format clean clean-all env-check verify-spog health update-images backup-config docs up-core up-all
 
 # Default target
 .DEFAULT_GOAL := help
 
 # Variables
 NETSECCTL := ./scripts/netsecctl.sh
+BOOTSTRAP := ./scripts/bootstrap-netsec.sh
 
 help: ## Show this help message
 	@echo "Orion Sentinel NetSec Node - Available Commands"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
-	@echo "Quick Start:"
-	@echo "  1. make setup          # Run interactive setup"
+	@echo "Quick Start (Production):"
+	@echo "  1. make bootstrap      # Initial system setup"
+	@echo "  2. make up-all         # Start all services (recommended)"
+	@echo ""
+	@echo "Alternative Quick Start:"
+	@echo "  1. make setup          # Interactive setup (legacy)"
 	@echo "  2. make start-spog     # Start in SPoG mode"
-	@echo "     OR"
-	@echo "     make start-standalone  # Start in Standalone mode"
 	@echo ""
 
-setup: ## Run interactive setup script
+bootstrap: ## Run bootstrap script to prepare system
+	@$(BOOTSTRAP)
+
+setup: ## Run interactive setup script (legacy)
 	@./setup.sh
 
-install: setup ## Alias for setup
+install: bootstrap ## Alias for bootstrap (recommended)
 
-start-spog: ## Start services in SPoG mode (production)
+up-core: ## Start core NSM services only (netsec-core profile)
+	@echo "Starting Orion Sentinel NetSec Core (Suricata + Promtail + Node Exporter)..."
+	@docker compose --profile netsec-core up -d
+	@echo "✓ Core services started"
+	@echo "  Check status: make status"
+
+up-all: ## Start all services (netsec-core + ai profiles) - RECOMMENDED
+	@echo "Starting Orion Sentinel NetSec - Full Stack..."
+	@docker compose --profile netsec-core --profile ai up -d
+	@echo "✓ All services started"
+	@echo "  Web UI: http://localhost:8000"
+	@echo "  Check status: make status"
+
+start-spog: ## Start services in SPoG mode (production) - LEGACY
 	@$(NETSECCTL) up-spog
 
-start-standalone: ## Start services in Standalone mode (development/lab)
+start-standalone: ## Start services in Standalone mode (development/lab) - LEGACY
 	@$(NETSECCTL) up-standalone
 
-start: start-spog ## Alias for start-spog (default start mode)
+start: up-all ## Alias for up-all (default start mode)
 
 stop: ## Stop all services
-	@$(NETSECCTL) down
+	@echo "Stopping all Orion Sentinel services..."
+	@docker compose --profile netsec-core --profile ai down
+	@echo "✓ All services stopped"
 
 down: stop ## Alias for stop
 
 status: ## Show status of all services
-	@$(NETSECCTL) status
+	@echo "Orion Sentinel Service Status:"
+	@echo ""
+	@docker compose --profile netsec-core --profile ai ps
 
 logs: ## Tail logs from all services
-	@$(NETSECCTL) logs
+	@docker compose --profile netsec-core --profile ai logs -f --tail=100
 
-restart-spog: stop start-spog ## Restart services in SPoG mode
+restart-spog: stop start-spog ## Restart services in SPoG mode (legacy)
 
-restart-standalone: stop start-standalone ## Restart services in Standalone mode
+restart-standalone: stop start-standalone ## Restart services in Standalone mode (legacy)
+
+restart: stop up-all ## Restart all services
 
 dev-install: ## Set up Python development environment
 	@echo "Setting up Python development environment..."
@@ -62,8 +87,25 @@ dev-install: ## Set up Python development environment
 	@echo "✅ Development environment ready!"
 	@echo "Activate with: source venv/bin/activate"
 
-test: ## Run tests
-	@echo "Running tests..."
+test: ## Run validation tests to check deployment
+	@echo "=== Orion Sentinel Validation Tests ==="
+	@echo ""
+	@echo "1. Checking if services are running..."
+	@docker compose ps --format "table {{.Name}}\t{{.Status}}" | grep -E "(orion-|NAME)" || echo "No services running"
+	@echo ""
+	@echo "2. Checking Suricata packet capture..."
+	@docker exec orion-suricata suricatasc -c "capture-mode" 2>/dev/null || echo "  ⚠ Suricata not running or not responding"
+	@echo ""
+	@echo "3. Checking Promtail log shipping..."
+	@docker logs orion-promtail 2>&1 | grep -i "POST" | tail -3 || echo "  ⚠ No log shipping activity found"
+	@echo ""
+	@echo "4. Checking API health..."
+	@curl -s http://localhost:8000/api/health 2>/dev/null && echo "" || echo "  ⚠ API not responding"
+	@echo ""
+	@echo "✓ Validation complete. See above for any warnings."
+
+test-python: ## Run Python unit tests
+	@echo "Running Python unit tests..."
 	@if [ -d "venv" ]; then \
 		. venv/bin/activate && pytest tests/; \
 	else \
