@@ -1,7 +1,7 @@
 # Orion Sentinel NetSec Node - Makefile
 # Provides convenient commands for common operations
 
-.PHONY: help bootstrap setup install start-spog start-standalone start stop down status logs restart-spog restart-standalone dev-install test lint format clean clean-all env-check verify-spog health update-images backup-config docs up-core up-all
+.PHONY: help bootstrap setup install start-spog start-standalone start stop down status logs restart-spog restart-standalone dev-install test lint format clean clean-all env-check verify-spog health update-images backup-config backup-volumes restore-volume docs up-core up-all ps
 
 # Default target
 .DEFAULT_GOAL := help
@@ -64,6 +64,8 @@ status: ## Show status of all services
 	@echo "Orion Sentinel Service Status:"
 	@echo ""
 	@docker compose --profile netsec-core --profile ai ps
+
+ps: status ## Alias for status - show running services
 
 logs: ## Tail logs from all services
 	@docker compose --profile netsec-core --profile ai logs -f --tail=100
@@ -187,6 +189,20 @@ backup-config: ## Backup .env and config files
 	@mkdir -p backups
 	@tar -czf backups/config-backup-$$(date +%Y%m%d-%H%M%S).tar.gz .env config/
 	@echo "✅ Configuration backed up to backups/"
+
+backup-volumes: ## Backup all Docker volumes (requires sudo)
+	@echo "Backing up Docker volumes..."
+	@sudo ./backup/backup-volumes.sh
+	@echo "✅ Volume backup complete. See /srv/backups/orion/"
+
+restore-volume: ## Restore a Docker volume (requires sudo and BACKUP_FILE variable)
+	@if [ -z "$(BACKUP_FILE)" ]; then \
+		echo "❌ Error: BACKUP_FILE variable is required"; \
+		echo "Usage: make restore-volume BACKUP_FILE=/path/to/backup.tar.gz"; \
+		exit 1; \
+	fi
+	@echo "Restoring volume from $(BACKUP_FILE)..."
+	@sudo ./backup/restore-volume.sh $(BACKUP_FILE)
 
 .PHONY: docs
 docs: ## Open documentation in browser (if available)
