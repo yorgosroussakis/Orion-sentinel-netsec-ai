@@ -9,10 +9,20 @@
 # 3. NVMe has sufficient free space
 # 4. Required directories exist with proper permissions
 #
+# Environment variables:
+#   NVME_MOUNT_POINT - NVMe mount path (default: /mnt/orion-nvme-netsec)
+#   NVME_WARN_THRESHOLD - Warn percentage (default: 80)
+#   NVME_CRITICAL_THRESHOLD - Critical percentage (default: 95)
+#   AUTO_CREATE_DIRS - Auto-create missing directories without prompting (default: 0)
+#
 # Exit codes:
 #   0 = All checks passed
 #   1 = Critical error (mount missing or full)
 #   2 = Warning (low disk space but not critical)
+#
+# Usage:
+#   ./check-nvme.sh                    # Interactive mode
+#   AUTO_CREATE_DIRS=1 ./check-nvme.sh # Non-interactive mode
 #
 
 set -euo pipefail
@@ -136,8 +146,26 @@ check_directories() {
             echo "  - $dir"
         done
         
-        # Ask user if they want to create them
-        read -p "Create missing directories? [y/N] " -n 1 -r
+        # Check if running in non-interactive mode
+        if [ "${AUTO_CREATE_DIRS:-0}" = "1" ]; then
+            log_info "AUTO_CREATE_DIRS=1, creating directories automatically"
+            for dir in "${missing_dirs[@]}"; do
+                sudo mkdir -p "$dir"
+                log_info "Created: $dir"
+            done
+            
+            # Set ownership (Suricata typically runs as UID 1000)
+            sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/suricata"
+            sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/promtail"
+            log_info "Set ownership to UID 1000 (Suricata user)"
+            return 0
+        fi
+        
+        # Interactive mode: ask user
+        read -t 30 -p "Create missing directories? [y/N] " -n 1 -r 2>/dev/null || {
+            log_warn "No response after 30 seconds, skipping directory creation"
+            return 2
+        }
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             for dir in "${missing_dirs[@]}"; do

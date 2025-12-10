@@ -59,7 +59,7 @@ All dashboards are designed to run on CoreSrv's Grafana instance, querying:
 - **Query Type:** Prometheus
 - **Query:**
   ```promql
-  100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle", orion_node_role="netsec"}[5m])) * 100)
+  (1 - avg by(instance) (irate(node_cpu_seconds_total{mode="idle", orion_node_role="netsec"}[5m]))) * 100
   ```
 - **Visualization:** Gauge
 - **Unit:** Percent (0-100)
