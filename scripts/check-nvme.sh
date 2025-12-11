@@ -10,7 +10,9 @@
 # 4. Required directories exist with proper permissions
 #
 # Environment variables:
-#   NVME_MOUNT_POINT - NVMe mount path (default: /mnt/orion-nvme-netsec)
+#   NVME_MOUNT - NVMe mount path (default: /mnt/orion-nvme-netsec)
+#   NVME_MOUNT_POINT - Legacy alias for NVME_MOUNT
+#   MIN_FREE_GB - Minimum free space in GB before warning (default: 5)
 #   NVME_WARN_THRESHOLD - Warn percentage (default: 80)
 #   NVME_CRITICAL_THRESHOLD - Critical percentage (default: 95)
 #   AUTO_CREATE_DIRS - Auto-create missing directories without prompting (default: 0)
@@ -28,9 +30,11 @@
 set -euo pipefail
 
 # Configuration
-NVME_MOUNT_POINT="${NVME_MOUNT_POINT:-/mnt/orion-nvme-netsec}"
+# Support both NVME_MOUNT (spec) and NVME_MOUNT_POINT (legacy)
+NVME_MOUNT_POINT="${NVME_MOUNT:-${NVME_MOUNT_POINT:-/mnt/orion-nvme-netsec}}"
 WARN_THRESHOLD_PCT="${NVME_WARN_THRESHOLD:-80}"
 CRITICAL_THRESHOLD_PCT="${NVME_CRITICAL_THRESHOLD:-95}"
+MIN_FREE_GB="${MIN_FREE_GB:-5}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -88,9 +92,20 @@ check_disk_space() {
     used_size=$(df -h "$NVME_MOUNT_POINT" | awk 'NR==2 {print $3}')
     avail_size=$(df -h "$NVME_MOUNT_POINT" | awk 'NR==2 {print $4}')
     
+    # Get available space in bytes and convert to GB
+    avail_bytes=$(df -B1 "$NVME_MOUNT_POINT" | awk 'NR==2 {print $4}')
+    avail_gb=$((avail_bytes / 1024 / 1024 / 1024))
+    
     log_info "Disk usage: $used_size / $total_size ($usage_pct% used, $avail_size available)"
     
-    # Check against thresholds
+    # Check against MIN_FREE_GB threshold first
+    if [ "$avail_gb" -lt "$MIN_FREE_GB" ]; then
+        log_error "NVMe free space is LOW: ${avail_gb}GB available (minimum: ${MIN_FREE_GB}GB)"
+        log_error "Free up space immediately or logs may fail to write"
+        return 1
+    fi
+    
+    # Check against percentage thresholds
     if [ "$usage_pct" -ge "$CRITICAL_THRESHOLD_PCT" ]; then
         log_error "NVMe disk usage is CRITICAL: ${usage_pct}% (threshold: ${CRITICAL_THRESHOLD_PCT}%)"
         log_error "Free up space immediately or logs may fail to write"
@@ -100,7 +115,7 @@ check_disk_space() {
         log_warn "Consider freeing up space soon"
         return 2
     else
-        log_info "NVMe disk space OK: ${usage_pct}% used"
+        log_info "NVMe disk space OK: ${usage_pct}% used, ${avail_gb}GB free"
         return 0
     fi
 }
