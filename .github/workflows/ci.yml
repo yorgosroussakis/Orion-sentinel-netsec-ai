@@ -155,14 +155,15 @@ jobs:
         cat > .env << EOF
         # CI Test Environment - Updated for new profile names
         NETSEC_INTERFACE=eth0
-        NVME_BASE_PATH=/tmp/ci-nvme-netsec
+        NVME_MOUNT=/tmp/ci-nvme-netsec
         ORION_NODE_ROLE=netsec
         ORION_NODE_NAME=ci-test-node
         HOSTNAME=ci-test
         LOKI_URL=http://localhost:3100
         NODE_EXPORTER_PORT=9100
         EVEBOX_PORT=5636
-        
+        TZ=UTC
+
         # AI service settings (for legacy profile tests)
         SOAR_DRY_RUN=1
         SOAR_POLL_INTERVAL=60
@@ -173,7 +174,7 @@ jobs:
         API_PORT=8000
         LOG_LEVEL=INFO
         EOF
-        
+
         echo "✓ .env file created"
         cat .env
 

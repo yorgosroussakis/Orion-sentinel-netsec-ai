@@ -71,12 +71,12 @@ services:
 
       # NVMe storage for logs and PCAPs (avoid microSD wear)
       # Bind-mount from host NVMe to avoid using Docker volumes
-      - ${NVME_BASE_PATH:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata
-      - ${NVME_BASE_PATH:-/mnt/orion-nvme-netsec}/suricata/rules:/var/lib/suricata
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/rules:/var/lib/suricata
 
       # Optional: PCAP storage (enable in suricata.yaml if needed)
       # Warning: PCAPs consume significant disk space
-      # - ${NVME_BASE_PATH:-/mnt/orion-nvme-netsec}/suricata/pcaps:/var/log/suricata/pcap
+      # - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/pcaps:/var/log/suricata/pcap
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -117,7 +117,7 @@ services:
       - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
 
       # Read Suricata logs from NVMe (read-only)
-      - ${NVME_BASE_PATH:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata:ro
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata:ro
 
       # Optional: Ship host system logs
       # Uncomment to include syslog, auth.log, etc.
@@ -188,7 +188,7 @@ services:
       - EVEBOX_HTTP_TLS_ENABLED=false
     volumes:
       # Read Suricata eve.json from NVMe (read-only)
-      - ${NVME_BASE_PATH:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata:ro
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata:ro
     ports:
       - "${EVEBOX_PORT:-5636}:5636"
     command:
