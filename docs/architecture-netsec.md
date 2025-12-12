@@ -545,6 +545,149 @@ find /mnt/orion-nvme-netsec/suricata/pcaps -name "*.pcap" -mtime +1 -delete
 
 ---
 
+## Smoke Tests
+
+Run these tests to validate your NetSec Pi deployment.
+
+### 1. Pre-flight Host Check
+
+**Verify NVMe storage is ready:**
+
+```bash
+# Run the NVMe health check script
+./scripts/check-nvme.sh
+
+# Expected output:
+# [INFO] NVMe mount point exists: /mnt/orion-nvme-netsec
+# [INFO] NVMe is mounted at /mnt/orion-nvme-netsec
+# [INFO] Disk usage: X% used, Y GB free
+# [INFO] All checks PASSED ✓
+```
+
+**Environment variables for check-nvme.sh:**
+- `NVME_MOUNT=/mnt/orion-nvme-netsec` - NVMe mount path
+- `MIN_FREE_GB=5` - Minimum free space in GB
+
+### 2. Container Startup
+
+**Start minimal stack and verify no crash-loops:**
+
+```bash
+# Start services
+docker compose --profile netsec-minimal up -d
+
+# Wait 30 seconds for services to initialize
+sleep 30
+
+# Check all services are running (not restarting)
+docker compose ps
+
+# Expected: All services show "running" status
+# - orion-netsec-suricata
+# - orion-netsec-promtail
+# - orion-netsec-node-exporter
+```
+
+### 3. Suricata EVE Output
+
+**Confirm Suricata is capturing and logging:**
+
+```bash
+# Check Suricata container logs for packet capture
+docker logs orion-netsec-suricata 2>&1 | grep -i "received"
+
+# Check if eve.json exists on NVMe
+ls -la /mnt/orion-nvme-netsec/suricata/logs/eve.json
+
+# View recent events
+docker exec orion-netsec-suricata tail -5 /var/log/suricata/eve.json
+
+# Generate a test alert (from another device or the Pi)
+curl https://testmyids.com
+
+# Verify the test alert appears
+docker exec orion-netsec-suricata tail /var/log/suricata/eve.json | jq 'select(.event_type=="alert")'
+```
+
+### 4. Promtail → Loki
+
+**Verify logs are being shipped to CoreSrv Loki:**
+
+```bash
+# Check Promtail logs for successful shipping
+docker logs orion-netsec-promtail 2>&1 | grep -i "POST"
+# Expected: "POST /loki/api/v1/push (200 OK)"
+
+# Verify Loki connectivity (replace with your CoreSrv IP)
+docker exec orion-netsec-promtail wget -q -O- http://192.168.x.x:3100/ready
+# Expected: "ready"
+```
+
+**Example Loki query (run on CoreSrv Grafana):**
+
+```logql
+{orion_node_role="netsec", app="suricata"} | json | event_type="alert"
+```
+
+### 5. Node Exporter
+
+**Verify CoreSrv can scrape metrics:**
+
+```bash
+# Test Node Exporter endpoint locally
+curl -s http://localhost:9100/metrics | head -20
+
+# Test from CoreSrv (replace with NetSec Pi IP)
+curl -s http://192.168.x.x:9100/metrics | head -20
+
+# Expected: Prometheus metrics output
+```
+
+**Validate in CoreSrv Prometheus:**
+
+1. Open Prometheus UI: `http://coresrv:9090`
+2. Go to Status → Targets
+3. Find `netsec-node-exporter` job
+4. Verify state is "UP"
+
+### 6. EveBox (if enabled)
+
+**Verify local alert UI is accessible:**
+
+```bash
+# Start with EveBox profile
+docker compose --profile netsec-plus-evebox up -d
+
+# Test EveBox HTTP endpoint
+curl -s http://localhost:5636/ | head -5
+
+# Or open in browser
+# http://netsec-pi-ip:5636
+```
+
+**Verify EveBox sees Suricata events:**
+
+1. Open EveBox in browser
+2. Check Events tab
+3. Should see recent alerts and flows
+
+### Quick Validation Script
+
+Run this all-in-one validation:
+
+```bash
+make test
+```
+
+This runs:
+1. NVMe storage check
+2. Service status check
+3. Suricata capture verification
+4. Promtail shipping verification
+5. Node Exporter endpoint test
+
+---
+
 ## Troubleshooting
 
 ### Suricata not capturing traffic
