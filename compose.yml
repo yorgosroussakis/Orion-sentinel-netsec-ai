@@ -27,7 +27,7 @@
 # Run ./scripts/check-nvme.sh before starting services
 # See docs/architecture-netsec.md for setup instructions
 
-version: '3.8'
+# Note: 'version' key is obsolete in modern Docker Compose and has been removed
 
 services:
   # ============================================================================
@@ -48,6 +48,11 @@ services:
   # - SYS_NICE: Adjust thread priorities for performance tuning (optional)
   #
   # Security: All other capabilities are dropped for least privilege
+  #
+  # NVMe-first storage:
+  # - Config, logs, and rules all persist on NVMe
+  # - Container /etc/suricata is writable for entrypoint to function
+  # - Run scripts/netsec-sync-config.sh to initialize NVMe config from repo template
   suricata:
     image: jasonish/suricata:7.0.2  # ARM64-compatible, well-maintained
     container_name: orion-netsec-suricata
@@ -60,19 +65,21 @@ services:
     cap_drop:
       - ALL
     environment:
+      # Timezone for log timestamps
+      - TZ=${TZ:-Europe/Amsterdam}
       # IMPORTANT: Set NETSEC_INTERFACE in .env to your mirrored traffic interface
       # Examples: eth0, eth1, enx00e04c68xxxx (USB Ethernet)
       # Verify with: ip link show
-      - SURICATA_OPTIONS=--af-packet=${NETSEC_INTERFACE:-eth0}
-      - TZ=${TZ:-Europe/Amsterdam}
+      - SURICATA_OPTIONS=--af-packet=${NETSEC_INTERFACE:-eth1}
     volumes:
-      # Suricata config (read-only)
-      - ./config/suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
-
-      # NVMe storage for logs and PCAPs (avoid microSD wear)
-      # Bind-mount from host NVMe to avoid using Docker volumes
+      # NVMe-first storage: All Suricata data persists on NVMe
+      # NOTE: /etc/suricata must NOT be read-only to allow entrypoint to function
+      # Config on NVMe (writable - entrypoint may modify)
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/etc:/etc/suricata
+      # Logs on NVMe (avoid microSD wear)
       - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/logs:/var/log/suricata
-      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/rules:/var/lib/suricata
+      # Rules and lib data on NVMe (for suricata-update persistence)
+      - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/suricata/lib:/var/lib/suricata
 
       # Optional: PCAP storage (enable in suricata.yaml if needed)
       # Warning: PCAPs consume significant disk space
@@ -134,12 +141,15 @@ services:
 
   # Node Exporter - System metrics for Prometheus (on CoreSrv)
   #
-  # Exposes metrics on port 9100 for CoreSrv Prometheus to scrape:
+  # Exposes metrics on configurable port (default 19100) for CoreSrv Prometheus to scrape:
   # - CPU usage per core
   # - Memory usage and swap
   # - Disk I/O and usage (including NVMe)
   # - Network I/O per interface
   # - System uptime and load average
+  #
+  # Port note: Default is 19100 to avoid conflicts with other node-exporters on the network.
+  # Set NODE_EXPORTER_PORT in .env to change.
   #
   # Security: Read-only access to host filesystems
   node-exporter:
@@ -153,7 +163,7 @@ services:
     volumes:
       - /:/host:ro,rslave
     ports:
-      - "${NODE_EXPORTER_PORT:-9100}:9100"
+      - "${NODE_EXPORTER_PORT:-19100}:9100"
     restart: unless-stopped
     networks:
       - orion-network
