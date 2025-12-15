@@ -8,9 +8,12 @@
 #   - Rules stored at /var/lib/suricata (NVMe)
 #   - Avoids microSD card wear and provides high I/O performance
 #
-# IMPORTANT: Ensure NVMe is mounted before starting Suricata
-#   Run: ./scripts/check-nvme.sh
-#   See: docs/architecture-netsec.md for setup details
+# IMPORTANT: This is a template file. On first run, it will be copied to
+# ${NVME_MOUNT}/suricata/etc/suricata.yaml by scripts/netsec-sync-config.sh.
+# Runtime modifications should be made to the NVMe copy.
+#
+# Run: ./scripts/check-nvme.sh before starting Suricata
+# See: docs/architecture-netsec.md for setup details
 
 %YAML 1.1
 ---
@@ -135,23 +138,36 @@ logging:
         filename: suricata.log
 
 # AF_PACKET capture settings (optimized for ARM/Pi 5)
+# NOTE: Safe Pi defaults - no cluster-id/cluster-type to avoid "fanout not supported" errors
 af-packet:
   - interface: default  # Will be overridden by command-line --af-packet option
-    cluster-id: 99
-    cluster-type: cluster_flow
+    # NOTE: cluster-id and cluster-type are NOT enabled by default
+    # Enabling these may cause "fanout not supported" errors on some systems
+    # cluster-id: 99
+    # cluster-type: cluster_flow
     defrag: yes
     use-mmap: yes
-    mmap-locked: yes
+    mmap-locked: no       # Disabled for Pi (may require elevated privileges)
     tpacket-v3: yes
-    ring-size: 2048      # Reduced for Pi (default: 10000+)
-    block-size: 32768    # Reduced for Pi
+    ring-size: 1024       # Safe Pi default (reduced from 2048)
+    block-size: 32768     # Reduced for Pi
     
-    # Buffer size (reduced for Pi)
-    buffer-size: 32mb
+    # Buffer size - MUST be integer in bytes (not "32mb")
+    # 32 MiB = 33554432 bytes
+    buffer-size: 33554432
+    
+    # Single thread for Pi (safe default)
+    threads: 1
     
     # Disable offloading (ensure we see all packets)
     disable-promisc: no
     checksum-checks: auto
+
+# Performance tuning for Pi 5
+# Limit CPU and memory usage
+max-pending-packets: 4096  # Safe Pi default (reduced from higher values)
+runmode: workers           # Worker threads
+autofp-scheduler: hash     # Hash-based load balancing
 
 # Threading configuration for Pi 5 (4 cores)
 threading:
@@ -165,15 +181,10 @@ threading:
         cpu: [ 2, 3 ]
   detect-thread-ratio: 1.0
 
-# Performance tuning for Pi 5
-# Limit CPU and memory usage
-max-pending-packets: 1024  # Reduced from default (65000+)
-runmode: workers           # Worker threads
-autofp-scheduler: hash     # Hash-based load balancing
-
 # Detection engine
+# NOTE: "low" profile recommended for Pi to reduce CPU usage
 detect:
-  profile: medium         # medium profile for Pi (low/medium/high)
+  profile: low            # low profile for Pi (low/medium/high)
   custom-values:
     toclient-groups: 3
     toserver-groups: 3
@@ -214,6 +225,9 @@ defrag:
   timeout: 60
 
 # App layer protocols
+# NOTE: DNP3 and Modbus are disabled by default to prevent rule parse errors
+# when those protocols' rules are enabled but the protocol parser is disabled.
+# Enable them if you need ICS/SCADA protocol support.
 app-layer:
   protocols:
     tls:
@@ -254,6 +268,14 @@ app-layer:
       enabled: yes
       detection-ports:
         dp: 139, 445
+    
+    # ICS/SCADA protocols - disabled by default
+    # Enable if monitoring industrial control networks
+    dnp3:
+      enabled: no
+    
+    modbus:
+      enabled: no
 
 # Rule files
 default-rule-path: /var/lib/suricata/rules
@@ -271,10 +293,12 @@ threshold-file: /etc/suricata/threshold.config
 # Host mode: Passive IDS (no packet modification)
 host-mode: sniffer-only
 
-# Packet acquisition
+# Packet acquisition - PCAP fallback (AF_PACKET is preferred)
 pcap:
   - interface: default
-    buffer-size: 32mb    # Reduced for Pi
+    # Buffer size - MUST be integer in bytes (not "32mb")
+    # 32 MiB = 33554432 bytes
+    buffer-size: 33554432
     checksum-checks: auto
 
 # Profiling (disabled for production)
@@ -293,7 +317,7 @@ profiling:
     enabled: no
 
 # Performance tuning hints:
-# - For lower CPU usage: Set detect.profile to "low"
+# - For lower CPU usage: detect.profile is set to "low"
 # - For more memory: Increase stream.memcap, flow.memcap
 # - For higher throughput: Increase max-pending-packets, ring-size
-# - Update rules regularly: suricata-update
+# - Update rules regularly: scripts/suricata-update.sh

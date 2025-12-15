@@ -15,7 +15,8 @@
 #   MIN_FREE_GB - Minimum free space in GB before warning (default: 5)
 #   NVME_WARN_THRESHOLD - Warn percentage (default: 80)
 #   NVME_CRITICAL_THRESHOLD - Critical percentage (default: 95)
-#   AUTO_CREATE_DIRS - Auto-create missing directories without prompting (default: 0)
+#   AUTO_CREATE_DIRS - Auto-create missing directories without prompting (default: 1)
+#   SKIP_MOUNT_CHECK - Skip mount check for dev/CI environments (default: 0)
 #
 # Exit codes:
 #   0 = All checks passed
@@ -23,8 +24,8 @@
 #   2 = Warning (low disk space but not critical)
 #
 # Usage:
-#   ./check-nvme.sh                    # Interactive mode
-#   AUTO_CREATE_DIRS=1 ./check-nvme.sh # Non-interactive mode
+#   ./check-nvme.sh                      # Non-interactive mode (auto-creates dirs)
+#   AUTO_CREATE_DIRS=0 ./check-nvme.sh   # Interactive mode (prompts for dirs)
 #
 
 set -euo pipefail
@@ -35,6 +36,9 @@ NVME_MOUNT_POINT="${NVME_MOUNT:-${NVME_MOUNT_POINT:-/mnt/orion-nvme-netsec}}"
 WARN_THRESHOLD_PCT="${NVME_WARN_THRESHOLD:-80}"
 CRITICAL_THRESHOLD_PCT="${NVME_CRITICAL_THRESHOLD:-95}"
 MIN_FREE_GB="${MIN_FREE_GB:-5}"
+# Default to auto-create for non-interactive operation
+AUTO_CREATE_DIRS="${AUTO_CREATE_DIRS:-1}"
+SKIP_MOUNT_CHECK="${SKIP_MOUNT_CHECK:-0}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -68,6 +72,11 @@ check_mount_exists() {
 
 # Function to check if NVMe is actually mounted
 check_is_mounted() {
+    if [ "$SKIP_MOUNT_CHECK" = "1" ]; then
+        log_warn "Skipping mount check (SKIP_MOUNT_CHECK=1)"
+        return 0
+    fi
+    
     if ! mountpoint -q "$NVME_MOUNT_POINT"; then
         log_error "NVMe is not mounted at $NVME_MOUNT_POINT"
         log_error "Check /etc/fstab and run: sudo mount -a"
@@ -139,9 +148,11 @@ check_write_permissions() {
 # Function to check/create required directories
 check_directories() {
     local dirs=(
+        "$NVME_MOUNT_POINT/suricata/etc"
         "$NVME_MOUNT_POINT/suricata/logs"
+        "$NVME_MOUNT_POINT/suricata/lib"
+        "$NVME_MOUNT_POINT/suricata/lib/rules"
         "$NVME_MOUNT_POINT/suricata/pcaps"
-        "$NVME_MOUNT_POINT/suricata/rules"
         "$NVME_MOUNT_POINT/promtail"
     )
     
@@ -157,23 +168,32 @@ check_directories() {
         log_info "All required directories exist"
         return 0
     else
-        log_warn "Missing directories (will be created):"
+        log_warn "Missing directories:"
         for dir in "${missing_dirs[@]}"; do
             echo "  - $dir"
         done
         
-        # Check if running in non-interactive mode
-        if [ "${AUTO_CREATE_DIRS:-0}" = "1" ]; then
+        # Check if running in non-interactive mode (default)
+        if [ "${AUTO_CREATE_DIRS}" = "1" ]; then
             log_info "AUTO_CREATE_DIRS=1, creating directories automatically"
             for dir in "${missing_dirs[@]}"; do
-                sudo mkdir -p "$dir"
-                log_info "Created: $dir"
+                if mkdir -p "$dir" 2>/dev/null; then
+                    log_info "Created: $dir"
+                elif sudo mkdir -p "$dir" 2>/dev/null; then
+                    log_info "Created (sudo): $dir"
+                else
+                    log_error "Failed to create: $dir"
+                    return 1
+                fi
             done
             
             # Set ownership (Suricata typically runs as UID 1000)
-            sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/suricata"
-            sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/promtail"
-            log_info "Set ownership to UID 1000 (Suricata user)"
+            if sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/suricata" 2>/dev/null; then
+                log_info "Set ownership to UID 1000 for suricata directories"
+            fi
+            if sudo chown -R 1000:1000 "$NVME_MOUNT_POINT/promtail" 2>/dev/null; then
+                log_info "Set ownership to UID 1000 for promtail directory"
+            fi
             return 0
         fi
         
