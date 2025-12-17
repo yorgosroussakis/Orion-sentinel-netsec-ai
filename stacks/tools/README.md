@@ -278,10 +278,12 @@ If ntopng uses too much CPU:
 - **Backups:** Not required
 
 ### ntopng
-- **Storage:** NVMe-backed Docker volume `ntopng-data`
-- **Location:** Managed by Docker (check with `docker volume inspect orion-netsec_ntopng-data`)
+- **Storage:** NVMe bind mount (not a Docker volume)
+- **Location:** `${NVME_MOUNT}/ntopng` (default: `/mnt/orion-nvme-netsec/ntopng`)
 - **Data:** Historical traffic statistics, flow data, host data
 - **Retention:** Configurable in ntopng web UI (default: auto-purge old data)
+- **Check space:** `df -h /mnt/orion-nvme-netsec`
+- **Backup:** Include in NVMe backup strategy (if backing up NVMe data)
 
 ### Redis (ntopng dependency)
 - **Storage:** Docker volume `redis-data` (ephemeral, can be lost)
