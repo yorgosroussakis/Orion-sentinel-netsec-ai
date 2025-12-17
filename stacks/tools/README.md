@@ -30,7 +30,7 @@ Network security analysis and data manipulation tools for the NetSec Pi.
 
 Edit the compose file to start the tools:
 ```bash
-sudo nano /home/runner/work/Orion-sentinel-netsec-ai/Orion-sentinel-netsec-ai/compose.yml
+sudo nano <path-to-orion-sentinel-netsec>/compose.yml
 ```
 
 Start services with the tools profile:
@@ -76,7 +76,7 @@ docker compose --profile netsec-tools down
 ### Local Networks
 Edit the local network CIDRs in the config:
 ```bash
-sudo nano /home/runner/work/Orion-sentinel-netsec-ai/Orion-sentinel-netsec-ai/stacks/tools/ntopng/ntopng.conf
+sudo nano <path-to-orion-sentinel-netsec>/stacks/tools/ntopng/ntopng.conf
 ```
 
 Change this line to match your network:
@@ -101,7 +101,7 @@ By default, ntopng monitors `eth1` (matching NETSEC_INTERFACE default). If your 
 
 1. **Main .env file:**
    ```bash
-   sudo nano /home/runner/work/Orion-sentinel-netsec-ai/Orion-sentinel-netsec-ai/.env
+   sudo nano <path-to-orion-sentinel-netsec>/.env
    ```
    
    Update:
@@ -111,7 +111,7 @@ By default, ntopng monitors `eth1` (matching NETSEC_INTERFACE default). If your 
 
 2. **ntopng.conf:**
    ```bash
-   sudo nano /home/runner/work/Orion-sentinel-netsec-ai/Orion-sentinel-netsec-ai/stacks/tools/ntopng/ntopng.conf
+   sudo nano <path-to-orion-sentinel-netsec>/stacks/tools/ntopng/ntopng.conf
    ```
    
    Change:
@@ -255,7 +255,7 @@ If ntopng uses too much CPU:
 
 1. Edit `ntopng.conf`:
    ```bash
-   sudo nano /home/runner/work/Orion-sentinel-netsec-ai/Orion-sentinel-netsec-ai/stacks/tools/ntopng/ntopng.conf
+   sudo nano <path-to-orion-sentinel-netsec>/stacks/tools/ntopng/ntopng.conf
    ```
 
 2. Add these lines:

@@ -268,6 +268,11 @@ services:
   # PROFILE: netsec-tools
   # Network Security Analysis Tools (CyberChef + ntopng)
   # ============================================================================
+  #
+  # NOTE: Port Conflict Warning
+  # CyberChef defaults to port 8000, which conflicts with the AI profile's API service.
+  # If you need to use both profiles together, change CYBERCHEF_PORT in .env:
+  #   CYBERCHEF_PORT=8080  # or another available port
 
   # CyberChef - Data transformation and analysis tool
   #
@@ -340,7 +345,7 @@ services:
   #
   # Why network_mode: host?
   # - ntopng needs direct access to the physical interface for packet capture
-  # - AF_PACKET mode requires binding to a specific interface (eth0)
+  # - AF_PACKET mode requires binding to a specific interface (eth1)
   # - Bridge networking would only see container traffic, not mirrored traffic
   # - Redis connection: Connects to Redis on localhost:6379 (Redis exposes port to host)
   #
