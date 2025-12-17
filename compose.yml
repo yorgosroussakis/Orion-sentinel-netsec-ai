@@ -306,12 +306,14 @@ services:
   # Redis - Required for ntopng
   #
   # Purpose: Caching and data operations for ntopng
-  # Note: When ntopng uses host networking, Redis must be accessible on localhost
+  # Note: ntopng uses host networking, so Redis must expose port on host
   redis:
     image: redis:7-alpine
     container_name: orion-netsec-redis
     profiles: ["netsec-tools"]
     command: redis-server --appendonly no --save ""
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -340,8 +342,7 @@ services:
   # - ntopng needs direct access to the physical interface for packet capture
   # - AF_PACKET mode requires binding to a specific interface (eth0)
   # - Bridge networking would only see container traffic, not mirrored traffic
-  # - Redis connection: When using host networking, ntopng connects to Redis
-  #   via the bridge network IP (discovered via DNS)
+  # - Redis connection: Connects to Redis on localhost:6379 (Redis exposes port to host)
   #
   # Access: http://netsec-pi-ip:3000 (LAN-only)
   # Default login disabled (--disable-login in ntopng.conf)
@@ -360,14 +361,10 @@ services:
       - ALL
     environment:
       - TZ=${TZ:-Europe/Amsterdam}
-      # Redis connection: Use service name (Docker DNS resolution)
-      # When using host networking, we need to connect to Redis on the bridge network
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
     volumes:
       # ntopng configuration (with interface and local networks)
       - ./stacks/tools/ntopng/ntopng.conf:/etc/ntopng/ntopng.conf:ro
-      
+
       # Data directory for historical statistics (NVMe-backed for performance)
       - ${NVME_MOUNT:-/mnt/orion-nvme-netsec}/ntopng:/var/lib/ntopng
     restart: unless-stopped
@@ -543,7 +540,7 @@ volumes:
     driver: local
   health-data:
     driver: local
-  
+
   # NetSec Tools volumes (only used if 'netsec-tools' profile is enabled)
   redis-data:
     driver: local
